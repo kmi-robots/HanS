@@ -64,8 +64,16 @@ class ObjRecEngine():
         for obj in objs_:
 
             bbox = obj.bbox.scale(scale_x, scale_y)
+
+            # Crop overflowing boxes
+            if int(bbox.ymax) > height:
+                bbox.ymax = int(height)
+            if int(bbox.xmax) > width:
+                bbox.xmax = int(width)
+
             bbox_list.append([int(bbox.xmin), int(bbox.ymin), int(bbox.xmax), int(bbox.ymax)])
-            detections.append((obj.id, obj.score))
+            obj_class = self.labels.get(obj.id, obj.id)
+            detections.append([obj.id, obj_class, obj.score])
 
         return bbox_list, detections
 
@@ -74,9 +82,8 @@ class ObjRecEngine():
         for bbox_,pred in zip(bbox_list,detection_list):
 
             cvimg = cv2.rectangle(cvimg, tuple(bbox_[:2]), tuple(bbox_[2:4]), self.color, self.thickness)
-            obj_class = self.labels.get(pred[0], pred[0])
-            conf_score = pred[1]
-            cv2.putText(cvimg, obj_class+'\t'+str(conf_score), (bbox_[0], bbox_[1] - 10),
+            oclass, conf_score = pred[1], pred[2]
+            cv2.putText(cvimg, oclass+'\t'+str(conf_score), (bbox_[0], bbox_[1] - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.9, color=self.color, thickness=self.thickness)
 
         return cvimg

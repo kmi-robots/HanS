@@ -24,7 +24,13 @@ def get_parser():
     #ROS & Robot-specific params
     parser.add_argument('--rgb_topic', default='/camera/rgb/image_rect_color', help='RGB camera topic name')
     parser.add_argument('--pcl_topic', default='/camera/depth_registered/points', help='PointCloud topic name')
+    parser.add_argument('--chull_topic', default='/polyhedron', help='Output topic for detected convex hulls')
     parser.add_argument('--intr_path', default='./data/camera_intrinsics.txt', help='Path to camera intrinsics txt file')
+
+    #PCL Outlier removal
+    parser.add_argument('--dist', default=0.2, help='Threshold to filter pcl points by distance')
+    parser.add_argument('--eps', default=0.05, help='DBSCAN eps value')
+    parser.add_argument('--minp', default=10, help='DBSCAN min no of points')
 
     #Data viz
     parser.add_argument('--bbox_color', default=(255,0,0), help='Color of detected bboxes')
