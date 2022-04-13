@@ -10,14 +10,14 @@ import message_filters
 from cv_bridge import CvBridge
 import cv2
 
-
 from utils import load_camera_intrinsics_txt
 from utils import derive_object_cloud
-from utils import remove_outliers
+from utils import pcl_remove_outliers
 from utils import derive_convex_hull
 
 from DL.models import ObjRecEngine
-# from boundingbox_msg.msg import ConvexHull
+from boundingbox_msg.msg import ConvexHull
+
 
 class ObjectRecognition(Node):
 
@@ -30,12 +30,12 @@ class ObjectRecognition(Node):
         self.bridge = CvBridge()
         self.obj_engine = ObjRecEngine(cliargs)
 
-        self.rgb_sub = message_filters.Subscriber(self, Image,cliargs.rgb_topic)
-        self.pcl_sub = message_filters.Subscriber(self, PointCloud2,cliargs.pcl_topic)
+        self.rgb_sub = message_filters.Subscriber(self, Image, cliargs.rgb_topic)
+        self.pcl_sub = message_filters.Subscriber(self, PointCloud2, cliargs.pcl_topic)
 
-        self.ts = message_filters.ApproximateTimeSynchronizer([self.rgb_sub, self.pcl_sub],queue_size=1, slop=0.1) # sync rgb and pcl messages
+        self.ts = message_filters.ApproximateTimeSynchronizer([self.rgb_sub, self.pcl_sub], queue_size=1, slop=0.1) # sync rgb and pcl messages
 
-        # self.pub_hull = self.create_publisher(ConvexHull, cliargs.chull_topic)
+        self.pub_hull = self.create_publisher(ConvexHull, cliargs.chull_topic, qos_profile=10) #A QoSProfile or a history depth to apply to the publisher
 
         # one callback for all
         self.ts.registerCallback(self.callback)
@@ -60,11 +60,11 @@ class ObjectRecognition(Node):
         for coords, preds in zip(bboxes,dets):
 
             segmented_pcl = derive_object_cloud(coords, pcl_msg)
-            filtered_pcl = remove_outliers(segmented_pcl,self.params)
+            filtered_pcl = pcl_remove_outliers(segmented_pcl,self.params)
             print(f'Filtered cloud of size: {len(filtered_pcl.points)}')
             chull_msg = derive_convex_hull(filtered_pcl,preds,pcl_msg)
 
-            # self.pub_hull.publish(chull_msg)
+            self.pub_hull.publish(chull_msg)
 
 
 

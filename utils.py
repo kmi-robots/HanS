@@ -3,7 +3,7 @@ from sensor_msgs_py import point_cloud2 as pc2
 import numpy as np
 import open3d as o3d
 from collections import Counter
-# from boundingbox_msg.msg import ConvexHull
+from boundingbox_msg.msg import ConvexHull
 from geometry_msgs.msg import Polygon, Point32
 
 def load_camera_intrinsics_txt(path_to_intr):
@@ -42,23 +42,22 @@ def derive_object_cloud(bcoords, pmsg):
     xyz = [(x, y, z) for x, y, z in cloud_data]  # get xyz
     segm_cloud.points = o3d.utility.Vector3dVector(np.array(xyz))
 
+    # o3d.visualization.draw_geometries([segm_cloud])
     return segm_cloud
 
-def remove_outliers(obj_pcl,params):
-    #Expects pointcloud in open3D format
 
-    # Filter by distance
-    dists = obj_pcl.compute_point_cloud_distance(obj_pcl)
-    dists = np.asarray(dists)
-    ind = np.where(dists > params.dist)[0]
-    dist_filtered = obj_pcl.select_by_index(ind)
+def pcl_remove_outliers(obj_pcl, params):
+    # Expects pointcloud in open3D format
+    uni_down_pcd = obj_pcl.uniform_down_sample(every_k_points=params.vx)
+    neighbours = int(len(np.asarray(uni_down_pcd.points)))
+    #print(neighbours)
+    fpcl,_ = obj_pcl.remove_statistical_outlier(nb_neighbors=neighbours, std_ratio=params.std_r)
+    # o3d.visualization.draw_geometries([fpcl])
 
-    #Density-based clustering
-    labels = np.array(dist_filtered.cluster_dbscan(eps=params.eps, min_points=params.minp))
+    labels = np.array(fpcl.cluster_dbscan(eps=params.eps, min_points=params.minp))
     if len(labels) < 1:
         print("No cluster found. Skipping")
-        return dist_filtered
-    print(f"point cloud has {labels.max() + 1} clusters")
+        return fpcl
 
     cluster_size = Counter(labels)
     max_value = cluster_size[max(cluster_size, key=cluster_size.get)]
@@ -69,7 +68,11 @@ def remove_outliers(obj_pcl,params):
         if label in main_clusters:
             id_keep.append(count)
 
-    return dist_filtered.select_by_index(id_keep)
+    clustered_pcl = fpcl.select_by_index(id_keep)
+    o3d.visualization.draw_geometries([clustered_pcl])
+    return clustered_pcl
+
+
 
 def derive_convex_hull(in_pcl, preds_, pmsg_):
 
@@ -80,9 +83,9 @@ def derive_convex_hull(in_pcl, preds_, pmsg_):
 
 def hull2msg(convex_hull, predictions, pcloud_msg):
 
-    hull_message = dict() #ConvexHull()
+    hull_message = ConvexHull()
 
-    hull_message.id = predictions[0] #TODO replace with timestamp?
+    hull_message.id = str(predictions[0]) #TODO replace with timestamp?
     hull_message.label = predictions[1]
     hull_message.header = pcloud_msg.header
     hull_message.header.frame_id = 'map'
@@ -105,3 +108,4 @@ def hull2msg(convex_hull, predictions, pcloud_msg):
         hull_message.polygons.append(poly)
 
 
+    return hull_message
