@@ -4,12 +4,11 @@ Overview of all architecture parameters
 """
 
 import argparse
+import os
 
 
 def get_parser():
     parser = argparse.ArgumentParser()
-
-    parser.add_argument('--mode', default='test', choices=['train', 'test'], help='Run in train or test mode')
 
     #Deep Learning params
     parser.add_argument('--model', default='ssd_mobilenet1',
@@ -26,6 +25,11 @@ def get_parser():
     parser.add_argument('--pcl_topic', default='/camera/depth_registered/points', help='PointCloud topic name')
     parser.add_argument('--chull_topic', default='/polyhedron', help='Output topic for detected convex hulls')
     parser.add_argument('--intr_path', default='./data/camera_intrinsics.txt', help='Path to camera intrinsics txt file')
+
+    #Postgresql/PostGIS params
+    parser.add_argument('--dbuser', default=os.environ['USER'], help='Username of postgresql database')
+    parser.add_argument('--dbname', default='gis_database', help='Postgresql database name')
+
 
     #PCL Outlier removal
     parser.add_argument('--vx', default=5, help='Number of points per voxel kept during downsampling')

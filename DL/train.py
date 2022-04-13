@@ -1,0 +1,3 @@
+"""
+Main training cycle
+"""

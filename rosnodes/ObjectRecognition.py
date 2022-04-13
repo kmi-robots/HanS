@@ -47,7 +47,6 @@ class ObjectRecognition(Node):
         cv2_im_rgb_big = cv2.cvtColor(cv2_im, cv2.COLOR_BGR2RGB)
         cv2_im_rgb = cv2.resize(cv2_im_rgb_big, self.obj_engine.input_size)
 
-
         objs = self.obj_engine.detect(cv2_im_rgb.tobytes())
         bboxes, dets = self.obj_engine.get_predictions(objs, cv2_im.shape)
         cv2_labeled_img = self.obj_engine.visualize_bboxes(cv2_im_rgb_big, bboxes,dets)
