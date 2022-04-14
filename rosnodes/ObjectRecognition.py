@@ -46,22 +46,16 @@ class ObjectRecognition(Node):
         cv2_im = self.bridge.imgmsg_to_cv2(img_msg)
         cv2_im_rgb_big = cv2.cvtColor(cv2_im, cv2.COLOR_BGR2RGB)
 
-        bboxes = self.obj_engine.detect(cv2_im_rgb_big)
-
-        #cv2_im_rgb = cv2.resize(cv2_im_rgb_big, self.obj_engine.input_size)
-
-        #objs = self.obj_engine.detect(cv2_im_rgb.tobytes())
-        #bboxes, dets = self.obj_engine.get_predictions(objs, cv2_im.shape)
-        cv2_labeled_img = self.obj_engine.visualize_bboxes(cv2_im_rgb_big, bboxes)
+        det_results = self.obj_engine.detect_objects(cv2_im_rgb_big)
+        cv2_labeled_img = self.obj_engine.visualize_bboxes(cv2_im_rgb_big, det_results)
 
         #Visualize img annotated with bboxes
         cv2.imshow('win', cv2_labeled_img)
-        cv2.waitKey(2000)
+        cv2.waitKey(5000)
         cv2.destroyAllWindows()
 
-        for coords in bboxes:
-
-            x1,y1,x2,y2 = coords
+        for obj_ in det_results:
+            x1,y1,x2,y2 = int(obj_.bbox.xmin), int(obj_.bbox.ymin), int(obj_.bbox.xmax), int(obj_.bbox.ymax)
             obj_roi = cv2_im_rgb_big.copy()
             obj_roi = obj_roi[y1:y2, x1:x2, :]  # crop image to bbox
 
@@ -69,12 +63,10 @@ class ObjectRecognition(Node):
             cv2.waitKey(2000)
             cv2.destroyAllWindows()
 
-            full_ranking_list = self.obj_engine.classify_bbox(obj_roi)
-
-            segmented_pcl = derive_object_cloud(coords, pcl_msg)
+            segmented_pcl = derive_object_cloud([x1,y1,x2,y2], pcl_msg)
             filtered_pcl = pcl_remove_outliers(segmented_pcl,self.params)
             print(f'Filtered cloud of size: {len(filtered_pcl.points)}')
-            chull_msg = derive_convex_hull(filtered_pcl,full_ranking_list,pcl_msg)
+            chull_msg = derive_convex_hull(filtered_pcl,obj_.pred_ranking,pcl_msg)
 
             self.pub_hull.publish(chull_msg)
 
