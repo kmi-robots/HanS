@@ -23,67 +23,76 @@ from pycoral.utils.edgetpu import make_interpreter, run_inference
 from pycoral.utils.dataset import read_label_file
 from pycoral.adapters.common import input_size
 from pycoral.adapters.detect import get_objects
+from pycoral.adapters.classify import get_classes
+
 
 import cv2
+import numpy as np
 
 class ObjRecEngine():
 
     def __init__(self,params):
 
-        if params.impr_path is None:
+        #BBox detection via openCV
+        self.segm_model = cv2.dnn.readNet(model=params.segm_model,
+                                          config=params.segm_config,
+                                          framework='TensorFlow')
+        self.segm_size = params.segm_size
+        self.segm_mean =  params.segm_mean
+        self.threshold = params.conft
 
-            #run object recognition with same model
-            self.interpreter = make_interpreter(params.model_path)
-            self.interpreter.allocate_tensors()
-            self.labels = read_label_file(params.classes)
-            self.input_size = input_size(self.interpreter)
-            self.threshold = params.conft
-
-        else:
-            #TODO run detection with bbox models and classify with imprinted model
-            pass
+        #Object classification on Edge TPU
+        self.interpreter = make_interpreter(params.model_path)
+        self.interpreter.allocate_tensors()
+        self.labels = read_label_file(params.classes)
+        self.input_size = input_size(self.interpreter)
 
         self.color = params.bbox_color
         self.thickness = params.bbox_thick
 
-    def detect(self,bin_img):
+    def detect(self,rgb_img):
 
-        run_inference(self.interpreter, bin_img)
+        height, width, channels = rgb_img.shape
 
-        return get_objects(self.interpreter, score_threshold=self.threshold)
+        blob = cv2.dnn.blobFromImage(image=rgb_img, size=self.segm_size, mean=self.segm_mean)
+        self.segm_model.setInput(blob)
 
-    def get_predictions(self, objs_, shape):
-
-        height, width, channels = shape
-        # Adjust coordinates to image pre resizing
-        scale_x, scale_y = width / self.input_size[0], height / self.input_size[1]
+        output = self.segm_model.forward()
 
         bbox_list = []
-        detections = []
+        for detection in output[0, 0, :, :]:  # loop over each of the detection
 
-        for obj in objs_:
+            confidence = detection[2]  # extract the confidence of the detection
+            if confidence > self.threshold:
+                # get the bounding box coordinates & normalise to image width and height
+                bounding_box = detection[3:7] * np.array([width, height, width, height])
+                (b_x, b_y, b_x2, b_y2) = bounding_box.astype("int")
+                # avoid overflowing bboxes
+                if b_x <= 0:  b_x = 1
+                if b_y <= 0: b_y = 1
+                if b_x2 >= width: b_x2 = int(width - 1)
+                if b_y2 >= height: b_y2 = int(height - 1)
 
-            bbox = obj.bbox.scale(scale_x, scale_y)
+                bbox_list.append([b_x, b_y, b_x2, b_y2])
 
-            # Crop overflowing boxes
-            if int(bbox.ymax) > height:
-                bbox.ymax = int(height)
-            if int(bbox.xmax) > width:
-                bbox.xmax = int(width)
+        return bbox_list
 
-            bbox_list.append([int(bbox.xmin), int(bbox.ymin), int(bbox.xmax), int(bbox.ymax)])
-            obj_class = self.labels.get(obj.id, obj.id)
-            detections.append([obj.id, obj_class, obj.score])
+    def classify_bbox(self, cropped_img):
 
-        return bbox_list, detections
+        resized_roi = cv2.resize(cropped_img, self.input_size)
+        run_inference(self.interpreter, resized_roi.tobytes())
+        all_class_ranking = get_classes(self.interpreter)
+        all_class_ranking = [(self.labels.get(cl.id, cl.id), cl.score) for cl in all_class_ranking]
 
-    def visualize_bboxes(self,cvimg, bbox_list, detection_list):
+        return all_class_ranking
 
-        for bbox_,pred in zip(bbox_list,detection_list):
+
+    def visualize_bboxes(self,cvimg, bbox_list):
+
+        for bbox_ in bbox_list:
 
             cvimg = cv2.rectangle(cvimg, tuple(bbox_[:2]), tuple(bbox_[2:4]), self.color, self.thickness)
-            oclass, conf_score = pred[1], pred[2]
-            cv2.putText(cvimg, oclass+'\t'+str(conf_score), (bbox_[0], bbox_[1] - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.9, color=self.color, thickness=self.thickness)
+            #cv2.putText(cvimg, oclass+'\t'+str(conf_score), (bbox_[0], bbox_[1] - 10),
+            #            cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.9, color=self.color, thickness=self.thickness)
 
         return cvimg

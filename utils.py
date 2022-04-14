@@ -86,7 +86,7 @@ def hull2msg(convex_hull, predictions, pcloud_msg):
     hull_message = ConvexHull()
 
     hull_message.id = str(predictions[0]) #TODO replace with timestamp?
-    hull_message.label = predictions[1]
+    hull_message.label = str(predictions)
     hull_message.header = pcloud_msg.header
     hull_message.header.frame_id = 'map'
 
@@ -106,6 +106,5 @@ def hull2msg(convex_hull, predictions, pcloud_msg):
         ppoint.z = v[2]
         poly.points.append(ppoint)
         hull_message.polygons.append(poly)
-
 
     return hull_message

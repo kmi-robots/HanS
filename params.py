@@ -11,13 +11,16 @@ def get_parser():
     parser = argparse.ArgumentParser()
 
     #Deep Learning params
-    parser.add_argument('--model', default='ssd_mobilenet1',
-                        choices=['ssd_mobilenet1', 'ssd_fpn_mobilenet1', 'ssd_mobilenet2', 'ssdlite_mobiledet'
-                                 'efficientdet0', 'efficientdet1', 'efficientdet2', 'efficientdet3', 'efficientdet3x'], help='TPU model used to detect objects')
+    parser.add_argument('--model', default='mobilenetv2',
+                        choices=['impr_mobilenet', 'inceptionv1', 'inceptionv2', 'inceptionv3', 'inceptionv4'
+                                 'mobilenetv1', 'mobilenetv2', 'mobilenetv3', 'resnet50', 'efficientdet'], help='TPU model used to detect objects')
 
-    parser.add_argument('--model_path', default='./data/ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite', help='Path to trained DL model')
-    parser.add_argument('--impr_path', default=None, help='Path to classifier trained with weight imprinting.')
-    parser.add_argument('--classes', default='./data/coco_labels.txt',help='Path to txt listing object classes')
+    parser.add_argument('--model_path', default='./data/mobilenet_v2_1.0_224_quant_edgetpu.tflite', help='Path to trained DL model')
+    parser.add_argument('--classes', default='./data/imagenet_labels.txt',help='Path to txt listing object classes')
+    parser.add_argument('--segm_model', default='./data/frozen_inference_graph_V2.pb', help='Path to segmentation model for OpenCV')
+    parser.add_argument('--segm_config', default='./data/ssd_mobilenet_v2_coco_2018_03_29.pbtxt.txt', help='Path to segmentation model for OpenCV')
+    parser.add_argument('--segm_size', default=(300,300), help='Value to resize input images for bbox detection')
+    parser.add_argument('--segm_mean', default=(104, 117, 123), help='Mean values to normalise input images for bbox detection')
     parser.add_argument('--conft', default=0.05, help='Confidence threshold for detected bounding boxes')
 
     #ROS & Robot-specific params
