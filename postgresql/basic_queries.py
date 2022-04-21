@@ -15,7 +15,7 @@ def create_measurement_table(conn, cur):
         'stamp timestamp NOT NULL,'  # timestamp of observation
         'convex_hull geometry,'  # estimated convex hull
         'tracking_id varchar,'   # tracking ID of bounding box 
-        'label varchar,'   # TODO: use it for topK DL predictions
+        'label varchar,'   # used for topK DL predictions
         'centroid_3d geometry);' # convex hull centroid
     )
     conn.commit()
