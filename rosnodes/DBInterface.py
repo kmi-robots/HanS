@@ -12,7 +12,7 @@ class DBInterface(Node):
         super().__init__('DBInterface')
         #Init postgresql table for single record/ convex hulls measured
         self.connection, self.cursor = connect_db(params.dbuser, params.dbname)
-        create_measurement_table(self.connection,self.cursor)
+        # create_measurement_table(self.connection,self.cursor)
 
         #Listen to convex hull msgs
         self.subscription = self.create_subscription(ConvexHull, params.chull_topic, self.callback, qos_profile=10)

@@ -14,3 +14,9 @@ Visual sensemaking repo for the Health &amp; Safety robot inspector (HanS)
 * [Open3D Python library](http://www.open3d.org/docs/0.12.0/introduction.html) v.0.12 for 3D data processing
 
 * ```apt install ros-foxy-sensor-msgs-py```
+
+
+## Database setup
+Instructions in ```./postgresql``` folder. 
+Create tables first through the queries in the ```create_queries.sql``` file.
+Apply triggers to queries as explained in the ```trigger_functions.md``` file.

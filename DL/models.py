@@ -75,7 +75,7 @@ class ObjRecEngine():
                         bbox=obj_.bbox.scale(scalex, scaley)) for obj_ in obj_list_pre]
 
         else:
-            #Detect bboxes with opencv first then classify single boxes with imprinted classifier
+            #Detect bboxes with openCV first then classify single boxes with imprinted classifier
             blob = cv2.dnn.blobFromImage(image=rgb_img, size=self.segm_size, mean=self.segm_mean)
             self.segm_model.setInput(blob)
 
