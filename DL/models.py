@@ -100,8 +100,7 @@ class ObjRecEngine():
                     resized_roi = cv2.resize(obj_roi, self.input_size)
                     run_inference(self.interpreter, resized_roi.tobytes())
                     all_class_ranking = get_classes(self.interpreter)
-                    all_class_ranking = [(self.labels.get(cl.id, cl.id), cl.score) for cl in all_class_ranking]
-
+                    all_class_ranking = [(cl.id, cl.score) for cl in all_class_ranking]
                     obj_list.append(DetObject(
                             pred_ranking=all_class_ranking,
                             bbox=BBox(xmin=b_x, ymin=b_y, xmax=b_x2,
@@ -116,7 +115,7 @@ class ObjRecEngine():
             cvimg = cv2.rectangle(cvimg, tuple(bbox_[:2]), tuple(bbox_[2:4]), self.color, self.thickness)
             topclass = o_.pred_ranking[0][0]
             conf_score = o_.pred_ranking[0][1]
-            cv2.putText(cvimg, topclass+'\t'+str(conf_score), (bbox_[0], bbox_[1] - 10),
+            cv2.putText(cvimg, str(topclass)+'\t'+str(conf_score), (bbox_[0], bbox_[1] - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.9, color=self.color, thickness=self.thickness)
 
         return cvimg

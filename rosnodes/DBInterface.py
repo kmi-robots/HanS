@@ -35,7 +35,7 @@ class DBInterface(Node):
                 polysurface = polysurface[:-2] + ')),'
             polysurface = polysurface[:-1] + ')'
             multipoint = multipoint[:-2] + ')'
-            query = insert_measurement.format(ts.isoformat(), msg.id, msg.label, polysurface, multipoint)
+            query = insert_measurement.format(ts.isoformat(), msg.label, polysurface, multipoint)
 
             self.cursor.execute(query)
             self.connection.commit()

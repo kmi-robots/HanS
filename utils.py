@@ -72,24 +72,27 @@ def pcl_remove_outliers(obj_pcl, trans, params):
             id_keep.append(count)
 
     clustered_pcl = fpcl.select_by_index(id_keep)
-    o3d.visualization.draw_geometries([clustered_pcl])
+    # o3d.visualization.draw_geometries([clustered_pcl])
     clustered_pcl.transform(trans)
     return clustered_pcl
 
 
-def derive_convex_hull(in_pcl, preds_, pmsg_):
+def derive_convex_hull(in_pcl, preds_, pmsg_, id_):
     hull, _ = in_pcl.compute_convex_hull()
 
-    return hull2msg(hull, preds_, pmsg_)
+    return hull2msg(hull, preds_, pmsg_,id_)
 
 
-def hull2msg(convex_hull, predictions, pcloud_msg):
+def hull2msg(convex_hull, predictions, pcloud_msg,hull_id):
     hull_message = ConvexHull()
 
-    hull_message.id = str(predictions[0])  # TODO replace with timestamp?
+    hull_message.id = hull_id
     hull_message.label = str(predictions)
     hull_message.header = pcloud_msg.header
     hull_message.header.frame_id = 'map'
+
+    convex_hull.orient_triangles() #puts all triangle normals in the same direction (either outside in or inside out)
+                                    # this ensures all faces in the polyhedral surface are oriented either all counterclockwise, or all clockwise
 
     for tr in convex_hull.triangles:
         poly = Polygon()

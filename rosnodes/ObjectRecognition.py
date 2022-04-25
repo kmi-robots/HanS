@@ -15,12 +15,14 @@ from tf2_ros.transform_listener import TransformListener
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
+from datetime import datetime
 from scipy.spatial.transform import Rotation as R
 
 from utils import load_camera_intrinsics_txt
 from utils import derive_object_cloud
 from utils import pcl_remove_outliers
 from utils import derive_convex_hull
+
 
 from DL.models import ObjRecEngine
 from boundingbox_msg.msg import ConvexHull
@@ -36,6 +38,9 @@ class ObjectRecognition(Node):
 
         self.bridge = CvBridge()
         self.obj_engine = ObjRecEngine(cliargs)
+
+        self.id_prefix = datetime.today().strftime('%Y%m%d%H%M')
+        self.id_counter = 0
 
         self.rgb_sub = message_filters.Subscriber(self, Image, cliargs.rgb_topic)
         self.pcl_sub = message_filters.Subscriber(self, PointCloud2, cliargs.pcl_topic)
@@ -55,21 +60,21 @@ class ObjectRecognition(Node):
 
     def callback(self, img_msg: Image, pcl_msg: PointCloud2):
 
-        try:
+        """try:
             trans = self.tf_buffer.lookup_transform(self.params.map_frame, pcl_msg.header.frame_id, pcl_msg.header.stamp)
         except TransformException as ex:
             self.get_logger().info(f'Could not transform map to {pcl_msg.header.frame_id}: {ex}')
             return
-
+        """
         o3d_transform = np.identity(4)
-        o3d_transform[0:3, 0:3] = R.from_quat([trans.transform.rotation.x,
+        """o3d_transform[0:3, 0:3] = R.from_quat([trans.transform.rotation.x,
                                                trans.transform.rotation.y,
                                                trans.transform.rotation.z,
                                                trans.transform.rotation.w]).as_matrix()
         o3d_transform[0, 3] = trans.transform.translation.x
         o3d_transform[1, 3] = trans.transform.translation.y
         o3d_transform[2, 3] = trans.transform.translation.z
-
+        """
         cv2_im = self.bridge.imgmsg_to_cv2(img_msg)
         cv2_im_rgb_big = cv2.cvtColor(cv2_im, cv2.COLOR_BGR2RGB)
 
@@ -84,6 +89,7 @@ class ObjectRecognition(Node):
         # cv2.waitKey(5000)
         # cv2.destroyAllWindows()
 
+
         for obj_ in det_results:
             x1, y1, x2, y2 = int(obj_.bbox.xmin), int(obj_.bbox.ymin), int(obj_.bbox.xmax), int(obj_.bbox.ymax)
             obj_roi = cv2_im_rgb_big.copy()
@@ -96,7 +102,9 @@ class ObjectRecognition(Node):
             segmented_pcl = derive_object_cloud([x1, y1, x2, y2], pcl_msg)
             filtered_pcl = pcl_remove_outliers(segmented_pcl, o3d_transform, self.params)
             print(f'Filtered cloud of size: {len(filtered_pcl.points)}')
-            chull_msg = derive_convex_hull(filtered_pcl, obj_.pred_ranking, pcl_msg)
+            chull_id = self.id_prefix +'_' + str(self.id_counter)
+            chull_msg = derive_convex_hull(filtered_pcl, obj_.pred_ranking, pcl_msg, chull_id)
+            self.id_counter +=1
 
             self.pub_hull.publish(chull_msg)
 
