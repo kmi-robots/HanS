@@ -6,6 +6,7 @@ from collections import Counter
 from boundingbox_msg.msg import ConvexHull
 from geometry_msgs.msg import Polygon, Point32
 
+
 def load_camera_intrinsics_txt(path_to_intr):
     """
     Expects 3x3 intrinsics matrix as singlespace-separated txt
@@ -15,9 +16,11 @@ def load_camera_intrinsics_txt(path_to_intr):
     with open(path_to_intr) as f:
         reader = csv.reader(f, delimiter=' ')
         for row in reader:
-            if row==[]: continue
+            if not row:
+                continue
             for cell in row:
-                if cell=='': continue
+                if cell == '':
+                    continue
                 try:
                     intrinsics.append(float(cell.split("  ")[1]))
                 except IndexError:
@@ -46,12 +49,12 @@ def derive_object_cloud(bcoords, pmsg):
     return segm_cloud
 
 
-def pcl_remove_outliers(obj_pcl, params):
+def pcl_remove_outliers(obj_pcl, trans, params):
     # Expects pointcloud in open3D format
     uni_down_pcd = obj_pcl.uniform_down_sample(every_k_points=params.vx)
     neighbours = int(len(np.asarray(uni_down_pcd.points)))
-    #print(neighbours)
-    fpcl,_ = obj_pcl.remove_statistical_outlier(nb_neighbors=neighbours, std_ratio=params.std_r)
+    # print(neighbours)
+    fpcl, _ = obj_pcl.remove_statistical_outlier(nb_neighbors=neighbours, std_ratio=params.std_r)
     # o3d.visualization.draw_geometries([fpcl])
 
     labels = np.array(fpcl.cluster_dbscan(eps=params.eps, min_points=params.minp))
@@ -70,22 +73,20 @@ def pcl_remove_outliers(obj_pcl, params):
 
     clustered_pcl = fpcl.select_by_index(id_keep)
     o3d.visualization.draw_geometries([clustered_pcl])
+    clustered_pcl.transform(trans)
     return clustered_pcl
 
 
-
 def derive_convex_hull(in_pcl, preds_, pmsg_):
-
     hull, _ = in_pcl.compute_convex_hull()
 
     return hull2msg(hull, preds_, pmsg_)
 
 
 def hull2msg(convex_hull, predictions, pcloud_msg):
-
     hull_message = ConvexHull()
 
-    hull_message.id = str(predictions[0]) #TODO replace with timestamp?
+    hull_message.id = str(predictions[0])  # TODO replace with timestamp?
     hull_message.label = str(predictions)
     hull_message.header = pcloud_msg.header
     hull_message.header.frame_id = 'map'
