@@ -60,21 +60,21 @@ class ObjectRecognition(Node):
 
     def callback(self, img_msg: Image, pcl_msg: PointCloud2):
 
-        """try:
+        try:
             trans = self.tf_buffer.lookup_transform(self.params.map_frame, pcl_msg.header.frame_id, pcl_msg.header.stamp)
         except TransformException as ex:
             self.get_logger().info(f'Could not transform map to {pcl_msg.header.frame_id}: {ex}')
             return
-        """
+
         o3d_transform = np.identity(4)
-        """o3d_transform[0:3, 0:3] = R.from_quat([trans.transform.rotation.x,
+        o3d_transform[0:3, 0:3] = R.from_quat([trans.transform.rotation.x,
                                                trans.transform.rotation.y,
                                                trans.transform.rotation.z,
                                                trans.transform.rotation.w]).as_matrix()
         o3d_transform[0, 3] = trans.transform.translation.x
         o3d_transform[1, 3] = trans.transform.translation.y
         o3d_transform[2, 3] = trans.transform.translation.z
-        """
+
         cv2_im = self.bridge.imgmsg_to_cv2(img_msg)
         cv2_im_rgb_big = cv2.cvtColor(cv2_im, cv2.COLOR_BGR2RGB)
 
