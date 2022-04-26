@@ -91,9 +91,6 @@ def hull2msg(convex_hull, predictions, pcloud_msg,hull_id):
     hull_message.header = pcloud_msg.header
     hull_message.header.frame_id = 'map'
 
-    convex_hull.orient_triangles() #puts all triangle normals in the same direction (either outside in or inside out)
-                                    # this ensures all faces in the polyhedral surface are oriented either all counterclockwise, or all clockwise
-
     for tr in convex_hull.triangles:
         poly = Polygon()
         for idv in tr:

@@ -20,6 +20,7 @@ class DBInterface(Node):
 
     def callback(self, msg: ConvexHull):
 
+        print("Reading convex hull msg")
         #Convert convex hull msg to polyhedron and insert into table measurements
         ts = datetime.fromtimestamp(msg.header.stamp.sec + msg.header.stamp.nanosec / 1000000000)
         if msg.polygons:
@@ -37,7 +38,9 @@ class DBInterface(Node):
             multipoint = multipoint[:-2] + ')'
             query = insert_measurement.format(ts.isoformat(), msg.label, polysurface, multipoint)
 
+            print("Starting db query")
             self.cursor.execute(query)
             self.connection.commit()
+            print("convex hull added to db")
 
 

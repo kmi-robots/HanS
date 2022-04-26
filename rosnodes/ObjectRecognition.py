@@ -104,7 +104,7 @@ class ObjectRecognition(Node):
             print(f'Filtered cloud of size: {len(filtered_pcl.points)}')
             chull_id = self.id_prefix +'_' + str(self.id_counter)
             chull_msg = derive_convex_hull(filtered_pcl, obj_.pred_ranking, pcl_msg, chull_id)
-            self.id_counter +=1
+            self.id_counter += 1
 
             self.pub_hull.publish(chull_msg)
 

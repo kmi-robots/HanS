@@ -36,7 +36,6 @@ END;
 We then create a second trigger named 'update_anchor' that actually updates the content of the anchor, based on the new measurements acquired.
 This trigger is activated after the previous one, since it is connected to an insertion in the `measurements_anchors` table. 
 A new entry in the table means a new measurement has been generated and assigned to an anchor, therefore the target anchor must be updated. 
-The convex hulls of different measurements are merged by considering their union. 
 The mean of the robot positions across measurements is also considered as robot position for the anchor. 
 
 
@@ -46,10 +45,6 @@ BEGIN
     SET last_update = (SELECT stamp
                        FROM measurements
                        WHERE object_key = NEW.object_key),
-        convex_hull_union = (SELECT ST_3DUnion(a.convex_hull_union, m.convex_hull)
-                        FROM measurements as m, anchors as a 
-                        WHERE m.object_key = NEW.object_key
-                        AND a.anchor_key = NEW.anchor_key),
         
         robot_position = (SELECT ST_GeometricMedian(ST_Collect(m.robot_position, a.robot_position))
                         FROM measurements as m, anchors as a 
