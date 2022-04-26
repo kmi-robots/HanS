@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS measurements(
 CREATE TABLE IF NOT EXISTS anchors(
     anchor_key serial PRIMARY KEY,
     location_3d geometry NOT NULL,
+    complete boolean,
     last_update timestamp NOT NULL,
     label varchar,
     convex_hull_union geometry,
@@ -27,7 +28,7 @@ CREATE TABLE IF NOT EXISTS anchors(
     d2 double precision,
     d3 double precision,
     robot_position geometry
-    )
+    );
 
 CREATE TABLE IF NOT EXISTS measurements_anchors (
     object_key integer,

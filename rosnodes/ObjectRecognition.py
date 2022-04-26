@@ -104,9 +104,10 @@ class ObjectRecognition(Node):
             print(f'Filtered cloud of size: {len(filtered_pcl.points)}')
             chull_id = self.id_prefix + '_' + str(self.id_counter)
             chull_msg = derive_convex_hull(filtered_pcl, obj_.pred_ranking, pcl_msg, chull_id)
-            chull_msg.robot_pose.header.stamp = chull_msg.header
-            chull_msg.robot_pose.pose.position = robot_pose.transform.translation
-            chull_msg.robot_pose.pose.orientation = robot_pose.transform.rotation
+            chull_msg.robot_pose.header = chull_msg.header
+            chull_msg.robot_pose.pose.position.x = robot_pose.transform.translation.x
+            chull_msg.robot_pose.pose.position.y = robot_pose.transform.translation.y
+            chull_msg.robot_pose.pose.position.z = robot_pose.transform.translation.z
             self.id_counter += 1
 
             self.pub_hull.publish(chull_msg)

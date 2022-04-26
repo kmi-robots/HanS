@@ -21,8 +21,8 @@ BEGIN
 	IF NOT EXISTS (SELECT * 
 				   FROM measurements_anchors
 				   WHERE object_key = NEW.object_key) THEN
-		INSERT INTO anchors(convex_hull_union, location_3d, last_update, label, robot_position)
-		VALUES (NEW.convex_hull, NEW.centroid_3d, NEW.stamp, NEW.label, NEW.robot_position);
+		INSERT INTO anchors(convex_hull_union, location_3d, last_update, label, robot_position, complete)
+		VALUES (NEW.convex_hull, NEW.centroid_3d, NEW.stamp, NEW.label, NEW.robot_position, FALSE);
 		INSERT INTO measurements_anchors(anchor_key, object_key)
 		SELECT anchor_key, NEW.object_key
 		FROM anchors
@@ -37,7 +37,8 @@ We then create a second trigger named 'update_anchor' that actually updates the 
 This trigger is activated after the previous one, since it is connected to an insertion in the `measurements_anchors` table. 
 A new entry in the table means a new measurement has been generated and assigned to an anchor, therefore the target anchor must be updated. 
 The mean of the robot positions across measurements is also considered as robot position for the anchor. 
-
+When a new anchor is created or a new measurement is found for an existing anchor, the field complete is set to False.
+In this way, the object anchor will be later selected for reasoning. 
 
 ```sql
 BEGIN
@@ -49,7 +50,8 @@ BEGIN
         robot_position = (SELECT ST_GeometricMedian(ST_Collect(m.robot_position, a.robot_position))
                         FROM measurements as m, anchors as a 
                         WHERE m.object_key = NEW.object_key
-                        AND a.anchor_key = NEW.anchor_key)
+                        AND a.anchor_key = NEW.anchor_key),
+        complete = FALSE
     WHERE anchor_key = NEW.anchor_key;
     UPDATE anchors
     SET location_3d =(SELECT ST_GeometricMedian(ST_Points(convex_hull_union))
@@ -60,9 +62,9 @@ BEGIN
 END;
 ```
 ##Adding triggers to a table
-From PGAdmin, right click on the measurement table and select Create > Trigger. 
+From PGAdmin, right click on the measurements table and select Create > Trigger. 
 In the definition tab select the assign_anchor function created below. 
 Under Events, select the AFTER INSERT option. 
 
-Then, repeat the same steps to add the update_anchor function to the measurement_anchor table.
+Then, repeat the same steps to add the update_anchor function to the measurements_anchors table.
 The setting AFTER INSERT is the same in this case. 

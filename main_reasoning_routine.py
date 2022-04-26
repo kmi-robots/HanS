@@ -4,7 +4,7 @@ def main():
 
     # TODO
     # connect to db
-    # read what is new from table measurements
+    # select all anchors marked as not complete
     # union of convex hull in same anchor
     # retrieve all DL predictions related to anchor
     # compute size and spatial bboxes of union chull
@@ -16,8 +16,8 @@ def main():
 
     # expand QSR graph based on Quasimodo concepts ./data/commonsense_extracted.json
     # check rules
+    # once done with reasoning, mark all object anchors as complete
     # evaluate results
-
     pass
 
 
