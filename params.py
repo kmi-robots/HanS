@@ -26,6 +26,7 @@ def get_parser():
     parser.add_argument('--chull_topic', default='/polyhedron', help='Output topic for detected convex hulls')
     parser.add_argument('--intr_path', default='./data/camera_intrinsics.txt', help='Path to camera intrinsics txt file')
     parser.add_argument('--map_frame', default='map', help='Frame of reference of the map')
+    parser.add_argument('--robot_frame', default='base_link', help='Frame of reference of the robot')
 
     # Postgresql/PostGIS params
     parser.add_argument('--dbuser', default=os.environ['USER'], help='Username of postgresql database')
