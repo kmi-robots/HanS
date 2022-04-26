@@ -23,7 +23,7 @@ BEGIN
 				   WHERE object_key = NEW.object_key) THEN
 		INSERT INTO anchors(convex_hull_union, location_3d, last_update, label, robot_position, complete)
 		VALUES (NEW.convex_hull, NEW.centroid_3d, NEW.stamp, NEW.label, NEW.robot_position, FALSE);
-		INSERT INTO measurements_anchors(anchor_key, object_key)
+        INSERT INTO measurements_anchors(anchor_key, object_key)
 		SELECT anchor_key, NEW.object_key
 		FROM anchors
 		WHERE location_3d = NEW.centroid_3d AND last_update = NEW.stamp

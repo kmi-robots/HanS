@@ -1,11 +1,17 @@
 import sys
-
+from params import get_parser
+from postgresql.io import *
+from postgresql.basic_queries import retrieve_new_anchor_measurements
 def main():
 
+    # Load parameters and maintain as dictionary
+    parser = get_parser()
+    args_dict, unknown = parser.parse_known_args()
+    connection, cursor = connect_db(args_dict.dbuser, args_dict.dbname) # connect to db
+
+    measurement_anchor_list = retrieve_new_anchor_measurements(connection, cursor)
     # TODO
-    # connect to db
-    # select all anchors marked as not complete
-    # union of convex hull in same anchor
+
     # retrieve all DL predictions related to anchor
     # compute size and spatial bboxes of union chull
     # compute QSR between anchors
