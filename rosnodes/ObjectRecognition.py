@@ -89,7 +89,6 @@ class ObjectRecognition(Node):
         # cv2.waitKey(5000)
         # cv2.destroyAllWindows()
 
-
         for obj_ in det_results:
             x1, y1, x2, y2 = int(obj_.bbox.xmin), int(obj_.bbox.ymin), int(obj_.bbox.xmax), int(obj_.bbox.ymax)
             obj_roi = cv2_im_rgb_big.copy()

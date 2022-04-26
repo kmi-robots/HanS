@@ -38,7 +38,6 @@ class DBInterface(Node):
             multipoint = multipoint[:-2] + ')'
             query = insert_measurement.format(ts.isoformat(), msg.label, polysurface, multipoint)
 
-            print("Starting db query")
             self.cursor.execute(query)
             self.connection.commit()
             print("convex hull added to db")
