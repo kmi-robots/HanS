@@ -19,8 +19,6 @@ class DBInterface(Node):
         self.subscription = self.create_subscription(ConvexHull, params.chull_topic, self.callback, qos_profile=10)
 
     def callback(self, msg: ConvexHull):
-
-        print("Reading convex hull msg")
         # Convert convex hull msg to polyhedron and insert into table measurements
         if msg.polygons:
             ts = datetime.fromtimestamp(msg.header.stamp.sec + msg.header.stamp.nanosec / 1000000000)
@@ -28,18 +26,13 @@ class DBInterface(Node):
             ry = msg.robot_pose.pose.position.y
             rz = msg.robot_pose.pose.position.z
 
-            polysurface = 'POLYHEDRALSURFACE Z ('
             multipoint = 'MULTIPOINT ('
             # ((0 0 0, 0 1 0, 1 1 0, 1 0 0, 0 0 0)),
             for poly in msg.polygons:
-                polysurface += '(('
                 for p in poly.points:
-                    polysurface += '{} {} {}, '.format(p.x, p.y, p.z)
                     multipoint += '{} {} {}, '.format(p.x, p.y, p.z)
-                polysurface = polysurface[:-2] + ')),'
-            polysurface = polysurface[:-1] + ')'
             multipoint = multipoint[:-2] + ')'
-            query = insert_measurement.format(ts.isoformat(), msg.label, rx, ry, rz, polysurface, multipoint)
+            query = insert_measurement.format(ts.isoformat(), msg.label, rx, ry, rz, multipoint, multipoint)
 
             self.cursor.execute(query)
             self.connection.commit()

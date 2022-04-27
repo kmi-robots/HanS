@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS anchors(
     last_update timestamp NOT NULL,
     label varchar,
     convex_hull_union geometry,
-    projection_2d geometry,
+    oriented_envelope geometry,
     bbox geometry,
     cbb geometry,
     bottomhsproj geometry,

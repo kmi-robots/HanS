@@ -56,8 +56,9 @@ class ObjectRecognition(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-    def callback(self, img_msg: Image, pcl_msg: PointCloud2):
+        print("Init done")
 
+    def callback(self, img_msg: Image, pcl_msg: PointCloud2):
         try:
             pc_trans = self.tf_buffer.lookup_transform(self.params.map_frame, pcl_msg.header.frame_id,
                                                        pcl_msg.header.stamp)

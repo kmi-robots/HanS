@@ -46,7 +46,6 @@ BEGIN
     SET last_update = (SELECT stamp
                        FROM measurements
                        WHERE object_key = NEW.object_key),
-        
         robot_position = (SELECT ST_GeometricMedian(ST_Collect(m.robot_position, a.robot_position))
                         FROM measurements as m, anchors as a 
                         WHERE m.object_key = NEW.object_key
@@ -54,9 +53,18 @@ BEGIN
         complete = FALSE
     WHERE anchor_key = NEW.anchor_key;
     UPDATE anchors
-    SET location_3d =(SELECT ST_GeometricMedian(ST_Points(convex_hull_union))
-                     FROM anchors
-                    WHERE anchors.anchor_key = NEW.anchor_key) 
+    SET convex_hull_union =(SELECT ST_Union(a.convex_hull_union, m.convex_hull)
+                        FROM measurements as m, anchors as a 
+                        WHERE m.object_key = NEW.object_key
+                        AND a.anchor_key = NEW.anchor_key)
+    WHERE anchor_key = NEW.anchor_key;    
+    UPDATE anchors
+    SET location_3d = (SELECT ST_GeometricMedian(convex_hull_union)
+                       FROM anchors
+                       WHERE anchors.anchor_key = NEW.anchor_key),
+         oriented_envelope = (SELECT ST_OrientedEnvelope(convex_hull_union)
+                              FROM anchors
+                              WHERE anchors.anchor_key = NEW.anchor_key)
     WHERE anchor_key = NEW.anchor_key;
     RETURN NEW;
 END;

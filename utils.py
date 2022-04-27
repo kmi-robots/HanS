@@ -1,4 +1,5 @@
 import csv
+
 from sensor_msgs_py import point_cloud2 as pc2
 import numpy as np
 import open3d as o3d
@@ -50,12 +51,14 @@ def derive_object_cloud(bcoords, pmsg):
 
 
 def pcl_remove_outliers(obj_pcl, trans, params):
-    # Expects pointcloud in open3D format
-    uni_down_pcd = obj_pcl.uniform_down_sample(every_k_points=params.vx)
-    neighbours = int(len(np.asarray(uni_down_pcd.points)))
-    # print(neighbours)
-    fpcl, _ = obj_pcl.remove_statistical_outlier(nb_neighbors=neighbours, std_ratio=params.std_r)
-    # o3d.visualization.draw_geometries([fpcl])
+    # # Expects pointcloud in open3D format
+    # uni_down_pcd = obj_pcl.uniform_down_sample(every_k_points=params.vx)
+    # neighbours = int(len(np.asarray(uni_down_pcd.points)))
+    # # print(neighbours)
+    # fpcl, _ = obj_pcl.remove_statistical_outlier(nb_neighbors=neighbours, std_ratio=params.std_r)
+    # # o3d.visualization.draw_geometries([fpcl])
+
+    fpcl = obj_pcl.voxel_down_sample(voxel_size=0.02)
 
     labels = np.array(fpcl.cluster_dbscan(eps=params.eps, min_points=params.minp))
     if len(labels) < 1:
@@ -91,10 +94,8 @@ def hull2msg(convex_hull, predictions, pcloud_msg,hull_id):
     hull_message.header = pcloud_msg.header
     hull_message.header.frame_id = 'map'
 
-    convex_hull.compute_triangle_normals()
-    flag1 = convex_hull.is_orientable()
-    flag = convex_hull.orient_triangles()
-    flag3 = convex_hull.has_triangle_normals()
+    convex_hull.orient_triangles()
+
     for tr in convex_hull.triangles:
         poly = Polygon()
         for idv in tr:
