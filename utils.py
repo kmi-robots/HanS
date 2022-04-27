@@ -91,10 +91,8 @@ def hull2msg(convex_hull, predictions, pcloud_msg,hull_id):
     hull_message.header = pcloud_msg.header
     hull_message.header.frame_id = 'map'
 
-    convex_hull.compute_triangle_normals()
-    flag1 = convex_hull.is_orientable()
-    flag = convex_hull.orient_triangles()
-    flag3 = convex_hull.has_triangle_normals()
+    convex_hull.orient_triangles()
+
     for tr in convex_hull.triangles:
         poly = Polygon()
         for idv in tr:

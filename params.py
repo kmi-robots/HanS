@@ -38,6 +38,9 @@ def get_parser():
     parser.add_argument('--eps', default=0.05, help='DBSCAN eps value')
     parser.add_argument('--minp', default=10, help='DBSCAN min no of points')
 
+    #spatial reasoner
+    parser.add_argument('--sf', default=1.2, help='Scaling factor to extrude object halfspaces')
+
     # Data viz
     parser.add_argument('--bbox_color', default=(255, 0, 0), help='Color of detected bboxes')
     parser.add_argument('--bbox_thick', default=2, help='Border thickness of detected bboxes')

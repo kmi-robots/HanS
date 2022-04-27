@@ -29,7 +29,7 @@ class DBInterface(Node):
             rz = msg.robot_pose.pose.position.z
 
             polysurface = 'POLYHEDRALSURFACE Z ('
-            multipoint = 'MULTIPOINT ('
+            multipoint = 'MULTIPOINT Z ('
             # ((0 0 0, 0 1 0, 1 1 0, 1 0 0, 0 0 0)),
             for poly in msg.polygons:
                 polysurface += '(('
