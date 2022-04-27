@@ -130,7 +130,6 @@ def extract_surface_QSR(session, obj_id, qsr_graph, fht=0.15, wht=0.2):
     res = tmp_cur.fetchone()[0]
     if res <= fht:
         qsr_graph.add_edge(obj_id, 'floor', QSR='touches')
-        #2020-05-15-11-24-12_379522_poly9 qsr_graph.add_edge(obj_id, 'floor', QSR='above')
         qsr_graph.add_edge(obj_id, 'floor', QSR='onTopOf')
         #also add relations in opposite direction #this is only to infer special ON cases later
         qsr_graph.add_edge('floor', obj_id, QSR='touches')
@@ -153,10 +152,7 @@ def infer_special_ON(local_graph):
     but propagates new QSRs found to global graph
     expects label mapping in human-readable form as input"""
     for node1 in local_graph.nodes():
-        # if obj1 touches or is touched by obj2
-        #cobj = lmapping[node1]
-        #if node1 =='2020-05-15-11-03-03_130652_poly0':
-        #    print("Hold on")
+
         t = [(f,ref,r) for f,ref,r in local_graph.out_edges(node1, data=True) if r['QSR'] =='touches']
         is_t = [(f,ref,r) for f,ref,r in local_graph.in_edges(node1, data=True) if r['QSR'] =='touches']
         is_a = [f for f,_,r in local_graph.in_edges(node1, data=True) if r['QSR']=='below'] #edges where obj1 is reference and figure objects are below it

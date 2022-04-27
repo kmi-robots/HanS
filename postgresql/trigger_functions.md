@@ -38,6 +38,8 @@ This trigger is activated after the previous one, since it is connected to an in
 A new entry in the table means a new measurement has been generated and assigned to an anchor, therefore the target anchor must be updated. 
 The mean of the robot positions across measurements is also considered as robot position for the anchor. 
 When a new anchor is created or a new measurement is found for an existing anchor, the field complete is set to False.
+The union of convex hulls in the same anchor is computed. 
+The centroid (geometric median) of the union convex hull is considered as 3D object position.
 In this way, the object anchor will be later selected for reasoning. 
 
 ```sql

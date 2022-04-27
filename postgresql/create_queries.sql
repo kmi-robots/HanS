@@ -2,7 +2,6 @@ CREATE TABLE IF NOT EXISTS measurements(
         object_key serial PRIMARY KEY,
         stamp timestamp NOT NULL,
         convex_hull geometry,
-        used_for_chull boolean DEFAULT FALSE,
         tracking_id varchar,
         label varchar,
         centroid_3d geometry,

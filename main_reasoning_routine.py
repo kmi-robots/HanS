@@ -16,8 +16,8 @@ def main():
     # retrieve new object anchors to be examined and all DL predictions related to each anchor
     #i.e., either a newly added anchor or a former anchor for which a new measurement was recorded
     anchor_dict = retrieve_new_anchor_measurements(connection, cursor)
-    populate_with_boxes(connection,cursor,sf=args_dict.sf)# compute size and spatial bboxes of union chull
-    populate_with_sizes(connection,cursor) #estimate anchor sizes (based on bbox)
+    populate_with_boxes(connection,cursor,sf=args_dict.sf) # compute size and spatial bboxes of union chull
+    populate_with_sizes(connection,cursor) # estimate anchor sizes (based on bbox)
     print("Spatial DB completed with anchor bounding boxes and sizes")
 
     qsr_graph = spatial_reason(connection,cursor,anchor_dict) # spatial reasoner
