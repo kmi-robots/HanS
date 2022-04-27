@@ -86,21 +86,14 @@ class ObjectRecognition(Node):
         rgb_msg = self.bridge.cv2_to_imgmsg(cv2_labeled_img, encoding='bgr8')
         self.pub_rgb.publish(rgb_msg)
 
-        # Visualize img annotated with bboxes
-        # cv2.imshow('win', cv2_labeled_img)
-        # cv2.waitKey(5000)
-        # cv2.destroyAllWindows()
-
         for obj_ in det_results:
-            x1, y1, x2, y2 = int(obj_.bbox.xmin), int(obj_.bbox.ymin), int(obj_.bbox.xmax), int(obj_.bbox.ymax)
-            obj_roi = cv2_im_rgb_big.copy()
-            obj_roi = obj_roi[y1:y2, x1:x2, :]  # crop image to bbox
+            x1, y1 = int(obj_.bbox.xmin), int(obj_.bbox.ymin)
+            x2, y2 = int(obj_.bbox.xmax), int(obj_.bbox.ymax)
 
-            # cv2.imshow('win', obj_roi)
-            # cv2.waitKey(2000)
-            # cv2.destroyAllWindows()
-
-            segmented_pcl = derive_object_cloud([x1, y1, x2, y2], pcl_msg)
+            if hasattr(obj_, 'mask'):
+                segmented_pcl = derive_object_cloud([x1, y1, x2, y2], pcl_msg, obj_.mask)
+            else:
+                segmented_pcl = derive_object_cloud([x1, y1, x2, y2], pcl_msg)
             filtered_pcl = pcl_remove_outliers(segmented_pcl, o3d_transform, self.params)
             print(f'Filtered cloud of size: {len(filtered_pcl.points)}')
             chull_id = self.id_prefix + '_' + str(self.id_counter)

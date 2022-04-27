@@ -30,14 +30,20 @@ import cv2
 import numpy as np
 import collections
 
+DetectionWithMask = collections.namedtuple('DetectionWithMask',
+                                           ['pred_ranking',
+                                            'bbox',
+                                            'mask'])
+DetObject = collections.namedtuple('DetectionObject',
+                                   ['pred_ranking',
+                                    'bbox'])
 
-DetObject = collections.namedtuple('Object', ['pred_ranking', 'bbox']) # changed to store full ranking instead of just top1
 
-class ObjRecEngine():
+class ObjRecEngine:
 
-    def __init__(self,params):
+    def __init__(self, params):
 
-        #Object classification on Edge TPU
+        # Object classification on Edge TPU
         if params.classif_path is None:
             self.interpreter = make_interpreter(params.model_path)
             self.segm_model = None
@@ -59,7 +65,7 @@ class ObjRecEngine():
         self.color = params.bbox_color
         self.thickness = params.bbox_thick
 
-    def detect_objects(self,rgb_img):
+    def detect_objects(self, rgb_img):
 
         height, width, channels = rgb_img.shape
         scalex, scaley = width / self.input_size[0], height / self.input_size[1]
@@ -69,60 +75,72 @@ class ObjRecEngine():
             run_inference(self.interpreter, resized_img.tobytes())
             # obj_list = get_objects(self.interpreter, score_threshold=self.threshold)
             obj_list_pre = self.get_objects_extended(self.interpreter, score_threshold=self.threshold)
-            #scale bbox again from 300x300 to full image size
+            # scale bbox again from 300x300 to full image size
             obj_list = [DetObject(
-                        pred_ranking=obj_.pred_ranking,
-                        bbox=obj_.bbox.scale(scalex, scaley)) for obj_ in obj_list_pre]
+                pred_ranking=obj_.pred_ranking,
+                bbox=obj_.bbox.scale(scalex, scaley)) for obj_ in obj_list_pre]
 
         else:
-            #Detect bboxes with openCV first then classify single boxes with imprinted classifier
-            blob = cv2.dnn.blobFromImage(image=rgb_img, size=self.segm_size, mean=self.segm_mean)
+            # Detect bboxes with openCV first then classify single boxes with imprinted classifier
+            blob = cv2.dnn.blobFromImage(image=rgb_img, crop=False)
             self.segm_model.setInput(blob)
-
-            output = self.segm_model.forward()
+            (output, masks) = self.segm_model.forward(["detection_out_final", "detection_masks"])
 
             obj_list = []
-            for detection in output[0, 0, :, :]:  # loop over each of the detection
-
+            for i, detection in enumerate(output[0, 0, :, :]):  # loop over each of the detection
                 confidence = detection[2]  # extract the confidence of the detection
+                class_id = int(detection[1])
                 if confidence > self.threshold:
                     # get the bounding box coordinates & normalise to image width and height
                     bounding_box = detection[3:7] * np.array([width, height, width, height])
                     (b_x, b_y, b_x2, b_y2) = bounding_box.astype("int")
+                    mask = masks[i, class_id]
+
                     # avoid overflowing bboxes
-                    if b_x <= 0:  b_x = 1
-                    if b_y <= 0: b_y = 1
-                    if b_x2 >= width: b_x2 = int(width - 1)
-                    if b_y2 >= height: b_y2 = int(height - 1)
+                    if b_x <= 0:
+                        b_x = 1
+                    if b_y <= 0:
+                        b_y = 1
+                    if b_x2 >= width:
+                        b_x2 = int(width - 1)
+                    if b_y2 >= height:
+                        b_y2 = int(height - 1)
+
+                    box_w = b_x2 - b_x
+                    box_h = b_y2 - b_y
+
+                    mask = cv2.resize(mask, (box_w, box_h), interpolation=cv2.INTER_NEAREST)
+                    mask = (mask > 0.5)
 
                     obj_roi = rgb_img.copy()
                     obj_roi = obj_roi[b_y:b_y2, b_x:b_x2, :]
+
                     resized_roi = cv2.resize(obj_roi, self.input_size)
                     run_inference(self.interpreter, resized_roi.tobytes())
                     all_class_ranking = get_classes(self.interpreter)
                     all_class_ranking = [(cl.id, cl.score) for cl in all_class_ranking]
-                    obj_list.append(DetObject(
-                            pred_ranking=all_class_ranking,
-                            bbox=BBox(xmin=b_x, ymin=b_y, xmax=b_x2,
-                                    ymax=b_y2).map(int)))
+                    obj_list.append(DetectionWithMask(
+                        pred_ranking=all_class_ranking,
+                        bbox=BBox(xmin=b_x, ymin=b_y, xmax=b_x2, ymax=b_y2).map(int),
+                        mask=mask))
+
         return obj_list
 
-
-    def visualize_bboxes(self,cvimg, res_list):
+    def visualize_bboxes(self, cvimg, res_list):
 
         for o_ in res_list:
             bbox_ = [int(o_.bbox.xmin), int(o_.bbox.ymin), int(o_.bbox.xmax), int(o_.bbox.ymax)]
             cvimg = cv2.rectangle(cvimg, tuple(bbox_[:2]), tuple(bbox_[2:4]), self.color, self.thickness)
             topclass = o_.pred_ranking[0][0]
             conf_score = o_.pred_ranking[0][1]
-            cv2.putText(cvimg, str(topclass)+'\t'+str(conf_score), (bbox_[0], bbox_[1] - 10),
+            cv2.putText(cvimg, str(topclass) + '\t' + str(conf_score), (bbox_[0], bbox_[1] - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.9, color=self.color, thickness=self.thickness)
 
         return cvimg
 
     def get_objects_extended(self, interpreter,
-                    score_threshold=-float('inf'),
-                    image_scale=(1.0, 1.0)):
+                             score_threshold=-float('inf'),
+                             image_scale=(1.0, 1.0)):
         """Slightly modified the pycoral.adapters.detect get_objects method to name the top1 as pred_ranking,
         although all pycoral detection models only allow to extract 1 (top-1) prediction per bounding box
 
@@ -154,18 +172,18 @@ class ObjRecEngine():
             scores = interpreter.tensor(signature['outputs']['output_1'])()[0]
             class_ids = interpreter.tensor(signature['outputs']['output_2'])()[0]
             boxes = interpreter.tensor(signature['outputs']['output_3'])()[0]
-        elif common.output_tensor(interpreter, 3).size == 1: # then out no. 3 is the count, i.e., tot no of boxes
+        elif common.output_tensor(interpreter, 3).size == 1:  # then out no. 3 is the count, i.e., tot no of boxes
             boxes = common.output_tensor(interpreter, 0)[0]
             class_ids = common.output_tensor(interpreter, 1)[0]
             scores = common.output_tensor(interpreter, 2)[0]
             count = int(common.output_tensor(interpreter, 3)[0])
         else:
-            scores = common.output_tensor(interpreter, 0)[0] # no. 2 is the count and 3 is the list of category ids
+            scores = common.output_tensor(interpreter, 0)[0]  # no. 2 is the count and 3 is the list of category ids
             boxes = common.output_tensor(interpreter, 1)[0]
             count = (int)(common.output_tensor(interpreter, 2)[0])
             class_ids = common.output_tensor(interpreter, 3)[0]
 
-        #output pre-division by box
+        # output pre-division by box
         print(interpreter.get_output_details())
         width, height = common.input_size(interpreter)
         image_scale_x, image_scale_y = image_scale
