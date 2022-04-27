@@ -20,7 +20,7 @@ def main():
     populate_with_sizes(connection,cursor) # estimate anchor sizes (based on bbox)
     print("Spatial DB completed with anchor bounding boxes and sizes")
 
-    qsr_graph = spatial_reason(connection,cursor,anchor_dict) # spatial reasoner
+    qsr_graph = spatial_reason(connection,cursor,anchor_dict,args_dict) # spatial reasoner
     # TODO
 
     # aggregate DL with/without reasoning + meta-reasoning options
@@ -31,6 +31,7 @@ def main():
     # expand QSR graph based on Quasimodo concepts ./data/commonsense_extracted.json
     # check rules
     # once done with reasoning, mark all object anchors as complete
+    disconnect_DB(connection,cursor) #close database connection
     # evaluate results
     pass
 

@@ -40,6 +40,11 @@ def get_parser():
 
     #spatial reasoner
     parser.add_argument('--sf', default=1.2, help='Scaling factor to extrude object halfspaces')
+    parser.add_argument('--T', default=2, help='Distance threshold to find neighbours, defaults to 2 units in the SRID of spatial DB')
+    parser.add_argument('--fht', default=0.15, help='Threshold to find objects that are at floor height, i.e., min Z coordinate = 0')
+    parser.add_argument('--wht', default=0.259, help='Threshold to decide if object touches wall surfaces - e.g., by default 20 cm')
+    parser.add_argument('--int_perc', default=0.05, help='Ratio of volume of figure object used for intersect spatial tests')
+
 
     # Data viz
     parser.add_argument('--bbox_color', default=(255, 0, 0), help='Color of detected bboxes')
