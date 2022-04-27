@@ -12,31 +12,33 @@ import matplotlib.pyplot as plt
 
 
 def plot_graph(G):
-    #G = nx.subgraph(G, ["0_radiator", "wall", "floor"]) #for debugging: look at node subset
+    # G = nx.subgraph(G, ["0_radiator", "wall", "floor"]) #for debugging: look at node subset
     pos = nx.spring_layout(G)
-    nx.draw(G,pos,connectionstyle='arc3, rad = 0.1',with_labels=True)
+    nx.draw(G, pos, connectionstyle='arc3, rad = 0.1', with_labels=True)
     edge_labels = nx.get_edge_attributes(G, 'QSR')
     # Uncomment below for debugging: look at only a subset of QSRs, e.g., leansOn, affixedON
-    #edge_labels = {(u,v,i): d for (u,v,i), d in nx.get_edge_attributes(G, 'QSR').items() if d in ['leansOn','affixedOn']}
-    draw_networkx_edge_labels(G, pos, edge_labels=edge_labels) #modified built-in method in nx below, because it needs unique keys, i.e., fails for multi-graph
+    # edge_labels = {(u,v,i): d for (u,v,i), d in nx.get_edge_attributes(G, 'QSR').items() if d in ['leansOn','affixedOn']}
+    draw_networkx_edge_labels(G, pos,
+                              edge_labels=edge_labels)  # modified built-in method in nx below, because it needs unique keys, i.e., fails for multi-graph
     plt.draw()
     plt.show()
 
+
 def draw_networkx_edge_labels(
-    G,
-    pos,
-    edge_labels=None,
-    label_pos=0.5,
-    font_size=10,
-    font_color="k",
-    font_family="sans-serif",
-    font_weight="normal",
-    alpha=None,
-    bbox=None,
-    horizontalalignment="center",
-    verticalalignment="center",
-    ax=None,
-    rotate=True,
+        G,
+        pos,
+        edge_labels=None,
+        label_pos=0.5,
+        font_size=10,
+        font_color="k",
+        font_family="sans-serif",
+        font_weight="normal",
+        alpha=None,
+        bbox=None,
+        horizontalalignment="center",
+        verticalalignment="center",
+        ax=None,
+        rotate=True,
 ):
     """Draw edge labels.
     Extended from original Networkx method to use with MultiDGraph,
@@ -51,7 +53,7 @@ def draw_networkx_edge_labels(
     else:
         labels = edge_labels
     text_items = {}
-    for (n1, n2,_), label in labels.items(): #only modification
+    for (n1, n2, _), label in labels.items():  # only modification
         (x1, y1) = pos[n1]
         (x2, y2) = pos[n2]
         (x, y) = (
@@ -110,6 +112,7 @@ def draw_networkx_edge_labels(
 
     return text_items
 
+
 def load_camera_intrinsics_txt(path_to_intr):
     """
     Expects 3x3 intrinsics matrix as singlespace-separated txt
@@ -134,14 +137,20 @@ def load_camera_intrinsics_txt(path_to_intr):
     return intrinsics
 
 
-def derive_object_cloud(bcoords, pmsg):
+def derive_object_cloud(bcoords, pmsg, mask=None):
     """Segment point cloud based on bounding box coords"""
 
     uvs = []
 
-    for x in range(bcoords[0], bcoords[2]):
-        for y in range(bcoords[1], bcoords[3]):
-            uvs.append([x, y])
+    if mask is None:
+        for x in range(bcoords[0], bcoords[2]):
+            for y in range(bcoords[1], bcoords[3]):
+                uvs.append([x, y])
+    else:
+        for x in range(bcoords[0], bcoords[2]):
+            for y in range(bcoords[1], bcoords[3]):
+                if mask[y - bcoords[1]][x - bcoords[0]]:
+                    uvs.append([x, y])
 
     cloud_data = list(pc2.read_points(pmsg, skip_nans=True, field_names=['x', 'y', 'z'], uvs=uvs))
     segm_cloud = o3d.geometry.PointCloud()
@@ -185,10 +194,10 @@ def pcl_remove_outliers(obj_pcl, trans, params):
 def derive_convex_hull(in_pcl, preds_, pmsg_, id_):
     hull, _ = in_pcl.compute_convex_hull()
 
-    return hull2msg(hull, preds_, pmsg_,id_)
+    return hull2msg(hull, preds_, pmsg_, id_)
 
 
-def hull2msg(convex_hull, predictions, pcloud_msg,hull_id):
+def hull2msg(convex_hull, predictions, pcloud_msg, hull_id):
     hull_message = ConvexHull()
 
     hull_message.id = hull_id

@@ -1,6 +1,7 @@
 .idea/
 data/frozen_inference_graph_V2.pb
 data/ssd_mobilenet_v2_coco_2018_03_29.pbtxt.txt
+data/frozen_inference_graph_mask.pb
 
 */__pycache__/
 *.py[cod]
