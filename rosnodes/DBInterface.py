@@ -26,7 +26,7 @@ class DBInterface(Node):
             ry = msg.robot_pose.pose.position.y
             rz = msg.robot_pose.pose.position.z
 
-            multipoint = 'MULTIPOINT ('
+            multipoint = 'MULTIPOINT Z ('
             # ((0 0 0, 0 1 0, 1 1 0, 1 0 0, 0 0 0)),
             for poly in msg.polygons:
                 for p in poly.points:
