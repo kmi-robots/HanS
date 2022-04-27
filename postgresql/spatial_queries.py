@@ -18,7 +18,7 @@ def populate_with_boxes(connection,cursor, sf=1.2):
         # ST_Translate is needed here because the oriented envelope is projected on XY so we also need to translate
         # everything up by the original height after extruding in this case
         up1_mask = 'UPDATE anchors SET bbox = ST_Translate(ST_Extrude(%s, 0, 0, %s), 0, 0, %s)' \
-                   ' WHERE object_key = %s;'
+                   ' WHERE anchor_key = %s;'
         cursor.execute(up1_mask, (envelope, str(height), zmin, id_))
         connection.commit()
 
@@ -27,21 +27,20 @@ def populate_with_boxes(connection,cursor, sf=1.2):
         #1) line connecting robot position and object centroid
         #2) line extending each of the edges of the oriented base of the object
 
-
         cursor.execute('SELECT ST_Angle(ST_MakeLine(robot_position, ST_Centroid(oriented_envelope)), ' \
-            'ST_MakeLine(ST_PointN(ST_ExteriorRing(oriented_envelope), 1), ' \
-            'ST_PointN(ST_ExteriorRing(oriented_envelope)), 2))), ' \
-            'ST_Angle(ST_MakeLine(robot_position, ST_Centroid(oriented_envelope)), ' \
-            'ST_MakeLine(ST_PointN(ST_ExteriorRing(oriented_envelope), 2), ' \
-            'ST_PointN(ST_ExteriorRing(oriented_envelope), 3))), ' \
-            'ST_Angle(ST_MakeLine(robot_position, ST_Centroid(oriented_envelope)), ' \
-            'ST_MakeLine(ST_PointN(ST_ExteriorRing(oriented_envelope), 3), ' \
-            'ST_PointN(ST_ExteriorRing(oriented_envelope), 4))), ' \
-            'ST_Angle(ST_MakeLine(robot_position, ST_Centroid(oriented_envelope)), ' \
-            'ST_MakeLine(ST_PointN(ST_ExteriorRing(oriented_envelope), 4), ' \
-            'ST_PointN(ST_ExteriorRing(oriented_envelope), 1)))'\
-            ' FROM anchors ' \
-            ' WHERE anchor_key = \'' + id_ + '\';')
+                       'ST_MakeLine(ST_PointN(ST_ExteriorRing(oriented_envelope), 1), ' \
+                       'ST_PointN(ST_ExteriorRing(oriented_envelope), 2))), ' \
+                       'ST_Angle(ST_MakeLine(robot_position, ST_Centroid(oriented_envelope)), ' \
+                       'ST_MakeLine(ST_PointN(ST_ExteriorRing(oriented_envelope), 2), ' \
+                       'ST_PointN(ST_ExteriorRing(oriented_envelope), 3))), ' \
+                       'ST_Angle(ST_MakeLine(robot_position, ST_Centroid(oriented_envelope)), ' \
+                       'ST_MakeLine(ST_PointN(ST_ExteriorRing(oriented_envelope), 3), ' \
+                       'ST_PointN(ST_ExteriorRing(oriented_envelope), 4))), ' \
+                       'ST_Angle(ST_MakeLine(robot_position, ST_Centroid(oriented_envelope)), ' \
+                       'ST_MakeLine(ST_PointN(ST_ExteriorRing(oriented_envelope), 4), ' \
+                       'ST_PointN(ST_ExteriorRing(oriented_envelope), 1)))' \
+                       ' FROM anchors ' \
+                       ' WHERE anchor_key = \'' + id_ + '\';')
 
         connection.commit()
 
