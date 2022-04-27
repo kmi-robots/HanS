@@ -26,6 +26,7 @@ def spatial_reason(conn, cur, anchors, args):
 
     #to visualize extracted QSR graph
     # plot_graph(QSRs)
+
     return
 
 def remove_redundant_qsrs(qgraph):

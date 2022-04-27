@@ -156,3 +156,37 @@ def populate_with_boxes(connection,cursor, sf=1.2):
                                 (lefths, str(height), zmin, righths, str(height), zmin,
                                  fronths,str(height), zmin, backhs,str(height), zmin, id_))
         connection.commit()
+
+
+def add_VG_row(cursor,qargs):
+    rel_id, pred, sub_coords, obj_coords = qargs
+    spoly_str = coords2polygon(sub_coords)
+    opoly_str = coords2polygon(obj_coords)
+
+    cursor.execute("""INSERT INTO vg_rels(relation_id, predicate_name, subject_polygon,object_top_projection)
+                   VALUES (%s,%s,ST_GeomFromText(%s),ST_GeomFromText(%s));
+                   """,(rel_id,pred,spoly_str,opoly_str))
+
+    print("Relation datapoint %s added to VG_RELATIONS" % rel_id)
+
+def compute_spatial_op(cursor, current_row_id):
+    #Computes spatial operations between bounding boxes in VG image
+
+    cursor.execute("""SELECT ST_Overlaps(subject_polygon, object_top_projection)
+                                FROM vg_rels
+                                WHERE relation_id=%s;""", (current_row_id,))
+
+    overlaps = cursor.fetchone()[0]
+
+    cursor.execute("""SELECT ST_Touches(subject_polygon, object_top_projection)
+                                    FROM vg_rels
+                                    WHERE relation_id=%s;""", (current_row_id,))
+    touches = cursor.fetchone()[0]
+
+    return overlaps, touches
+
+def coords2polygon(coord_list):
+    """Formats list of 2D coordinate points
+    as string defining Polygon in PostgreSQL"""
+    coords_ = [str(x) + " " + str(y) for x, y in coord_list]
+    return "POLYGON(("+",".join(t for t in coords_)+"))"

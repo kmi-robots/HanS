@@ -39,12 +39,37 @@ def get_parser():
     parser.add_argument('--minp', default=10, help='DBSCAN min no of points')
 
     #spatial reasoner
+    parser.add_argument('--extract_spatialkb', type=str2bool, nargs='?', const=False, default=False,
+                        help='If True, also extracts the background spatial knowledge from VG. '
+                             'Otherwise, pre-extracted rels from VG are assumed to be available ')
+    parser.add_argument('--spatialkb_path', default='./data/VG_spatial_stats.json',
+                        help='Path to background spatial knowledge')
+    parser.add_argument('--vg_src)', default='./data/relationships.json', help='Path to source Visual Genome relationships')
     parser.add_argument('--sf', default=1.2, help='Scaling factor to extrude object halfspaces')
     parser.add_argument('--T', default=2, help='Distance threshold to find neighbours, defaults to 2 units in the SRID of spatial DB')
     parser.add_argument('--fht', default=0.15, help='Threshold to find objects that are at floor height, i.e., min Z coordinate = 0')
     parser.add_argument('--wht', default=0.259, help='Threshold to decide if object touches wall surfaces - e.g., by default 20 cm')
     parser.add_argument('--int_perc', default=0.05, help='Ratio of volume of figure object used for intersect spatial tests')
 
+    #size reasoner
+    parser.add_argument('--extract_sizekb', type=str2bool, nargs='?', const=True, default=True,
+                        help='If True, also extracts the background size knowledge. '
+                             'Otherwise, pre-extracted rels are assumed to be available ')
+    parser.add_argument('--sizekb_path', default='./data/obj_size_catalogue.json', help='Path to background size knowledge')
+
+    #Graph completion
+    parser.add_argument('--extract_quasi', type=str2bool, nargs='?', const=False, default=False,
+                        help='If True, also extracts background knowledge from Quasimodo. '
+                             'Otherwise, pre-extracted kb assumed to be available ')
+    parser.add_argument('--quasikb_path', default='./data/commonsense_extracted.json', help='Path to background cs knowledge')
+    parser.add_argument('--quasi_src', default='./data/quasimodo43.tsv', help='Path to source quasimodo data')
+    parser.add_argument('--quasi_t', default=0.64, help='Threshold for filtering facts by confidence')
+
+    #Wordnet terms
+    parser.add_argument('--extract_synsets', type=str2bool, nargs='?', const=False, default=False,
+                        help='If True, also extracts synsets for target classes from WordNet. '
+                             'Otherwise, the mapping linked in syn_path is assumed as available ')
+    parser.add_argument('--syn_path', default='./data/class_to_synset.json', help='Path to class name / synset mapping')
 
     # Data viz
     parser.add_argument('--bbox_color', default=(255, 0, 0), help='Color of detected bboxes')
@@ -52,4 +77,13 @@ def get_parser():
 
     return parser
 
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else: raise argparse.ArgumentTypeError('Boolean value expected.')
 

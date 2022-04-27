@@ -35,5 +35,10 @@ CREATE TABLE IF NOT EXISTS measurements_anchors (
     anchor_key integer,
     primary key (object_key, anchor_key),
     FOREIGN KEY (object_key) REFERENCES measurements (object_key),
-    FOREIGN KEY (anchor_key) REFERENCES anchors (anchor_key))
+    FOREIGN KEY (anchor_key) REFERENCES anchors (anchor_key));
 
+CREATE TABLE IF NOT EXISTS vg_rels(
+    relation_id serial PRIMARY KEY,
+    predicate_name varchar NOT NULL,
+    subject_polygon geometry,
+    object_top_projection geometry);
