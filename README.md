@@ -22,3 +22,7 @@ Instructions in ```./postgresql``` folder.
 Create tables first through the queries in the ```create_queries.sql``` file.
 Apply triggers to queries as explained in the ```trigger_functions.md``` file.
 
+## Running on your own map
+The script ```postgresql/draw_walls.py``` can be used for annotating the walls of an input map.
+The image of the map and configuration parameters (map origin, and resolution), should 
+follow the same format of the files provided under ```./map```. 

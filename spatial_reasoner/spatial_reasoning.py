@@ -16,7 +16,7 @@ def spatial_reason(conn, cur, anchors, args):
             QSRs = extract_QSR(session, o_id, figure_objs, QSRs, int_perc=args.int_perc)  # relations between objects
             # plot_graph(QSRs)
 
-        #TODO change extract_surface_QSR (no precalc) + new walls
+        #Changed to extract_surface_QSR (no precalc) + new walls
         QSRs = extract_surface_QSR(session, o_id, QSRs, fht=args.fht, wht=args.wht)  # relations with walls and floor
     # after all reference objects have been examined
     # derive special cases of ON
@@ -178,9 +178,11 @@ def extract_surface_QSR(session, obj_id, qsr_graph, fht=0.15, wht=0.259):#fht=0.
     """
     tmp_conn, tmp_cur = session
     # Use postGIS for deriving truth values of base operators
-    tmp_cur.execute("""SELECT o_zmin
-                    FROM objects_precalc
-                    WHERE object_id = %s
+    # min Z coordinate of bounding box is used to decide whether the object touches the floor
+    # assumption of mobile ground robot: operates in contact with the floor with standard upward-pointing Z axis
+    tmp_cur.execute("""SELECT ST_Zmin(a.bbox)
+                    FROM anchors as a
+                    WHERE a.anchor_key = %s
                     """,(obj_id,))
     # Unpack results and infer QSR predicates
     res = tmp_cur.fetchone()[0]
@@ -191,9 +193,9 @@ def extract_surface_QSR(session, obj_id, qsr_graph, fht=0.15, wht=0.259):#fht=0.
         qsr_graph.add_edge('floor', obj_id, QSR='touches')
         qsr_graph.add_edge('floor', obj_id, QSR='below')
 
-    tmp_cur.execute("""SELECT ow_distance
-                       FROM objects_precalc
-                       WHERE object_id = %s
+    tmp_cur.execute("""SELECT ST_3DDistance(a.bbox,w.surface)
+                       FROM anchors as a, sw_walls as w
+                       WHERE a.anchor_key = %s
                         """, (obj_id,))
     res = [r[0] for r in tmp_cur.fetchall()] #[0]
     #find the min distance to walls
