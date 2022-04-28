@@ -1,4 +1,6 @@
+import sys
 import csv
+csv.field_size_limit(sys.maxsize) # handle large file
 
 from sensor_msgs_py import point_cloud2 as pc2
 import numpy as np
@@ -10,6 +12,34 @@ from geometry_msgs.msg import Polygon, Point32
 import networkx as nx
 import matplotlib.pyplot as plt
 
+
+def get_csv_data(filepath, delim=','):
+    with open(filepath, "rt") as csvfile:
+        datareader = csv.reader(csvfile, delimiter=delim)
+        for row in datareader: yield row
+
+def load_camera_intrinsics_txt(path_to_intr):
+    """
+    Expects 3x3 intrinsics matrix as singlespace-separated txt
+    See ./data/camera_intrinsics.txt for expected format
+    """
+    intrinsics = []
+    with open(path_to_intr) as f:
+        reader = csv.reader(f, delimiter=' ')
+        for row in reader:
+            if not row:
+                continue
+            for cell in row:
+                if cell == '':
+                    continue
+                try:
+                    intrinsics.append(float(cell.split("  ")[1]))
+                except IndexError:
+                    try:
+                        intrinsics.append(float(cell.split(" ")[1]))
+                    except IndexError:
+                        intrinsics.append(float(cell))
+    return intrinsics
 
 def plot_graph(G):
     # G = nx.subgraph(G, ["0_radiator", "wall", "floor"]) #for debugging: look at node subset
@@ -113,28 +143,7 @@ def draw_networkx_edge_labels(
     return text_items
 
 
-def load_camera_intrinsics_txt(path_to_intr):
-    """
-    Expects 3x3 intrinsics matrix as singlespace-separated txt
-    See ./data/camera_intrinsics.txt for expected format
-    """
-    intrinsics = []
-    with open(path_to_intr) as f:
-        reader = csv.reader(f, delimiter=' ')
-        for row in reader:
-            if not row:
-                continue
-            for cell in row:
-                if cell == '':
-                    continue
-                try:
-                    intrinsics.append(float(cell.split("  ")[1]))
-                except IndexError:
-                    try:
-                        intrinsics.append(float(cell.split(" ")[1]))
-                    except IndexError:
-                        intrinsics.append(float(cell))
-    return intrinsics
+
 
 
 def derive_object_cloud(bcoords, pmsg, mask=None):

@@ -36,7 +36,7 @@ def main():
     print("Retrieving background KBs")
     if args_dict.extract_sizekb: #extract from scratch
         print("Extracting size knowledge from scratch ... it will take long")
-        sizeKB = extract_size_kb(args_dict)
+        sizeKB = extract_size_kb(target_classes, args_dict)
     else:
         with open(args_dict.sizekb_path) as fp: #load pre-extracted from local
             sizeKB = json.load(fp)
@@ -65,6 +65,7 @@ def main():
     populate_with_sizes(connection,cursor) # estimate anchor sizes (based on bbox)
     print("Spatial DB completed with anchor bounding boxes and sizes")
 
+    #TODO aggregate DL rankings on same anchor
     #TODO size reasoning based on background size KB
 
     qsr_graph = spatial_reason(connection,cursor,anchor_dict,args_dict) # spatial reasoner

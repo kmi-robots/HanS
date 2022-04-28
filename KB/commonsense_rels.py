@@ -1,10 +1,11 @@
 """Extraction of commonsense facts for graph completion from the Quasimodo resource"""
 import csv
 import sys
-csv.field_size_limit(sys.maxsize) # handle large file
+
 from pattern.text.en import singularize
 import json
 
+from utils import get_csv_data
 
 tgt_objects = ['book', 'fire door','safety sign', 'fire extinguisher', 'chair', 'trash can', 'kettle',
                'electric heater', 'desk', 'electric cable', 'power socket', 'plug', 'person']
@@ -16,75 +17,74 @@ tgt_properties= ['ignition','flammable', 'combustible', 'hazard', 'dangerous', '
 
 
 def extract_csk(args):
-
+    """Extract commonsense facts from Quasimodo"""
     commonsense_facts = {k: {} for k in tgt_objects}
-    with open(args.quasi_src) as file:
-        tsv_file = csv.reader(file, delimiter="\t")
-        header = next(tsv_file)
-        print("Data header:")
-        print(header)
-        rows = []
-        incomplete_rows = 0
-        entities_tocheck = []
-        for row in tsv_file:
-            try:
-                sub, pred, obj_, modality, is_negative, score, sentence_score, typicality, saliency = row
-                sub = singularize(sub)  # singularize for linking entities
-                # obj_ = obj_.split()
-                score = float(score)
-                typicality = float(typicality)
-                saliency = float(saliency)
-            except ValueError:
-                print("skip noisy row")
-                print(row)
-                incomplete_rows += 1
+
+    tsv_gen = get_csv_data(args.quasi_src, delim="\t")
+    header = next(tsv_gen)
+    print("Data header:")
+    print(header)
+
+    incomplete_rows = 0
+    entities_tocheck = []
+    for row in tsv_gen:
+        try:
+            sub, pred, obj_, modality, is_negative, score, sentence_score, typicality, saliency = row
+            sub = singularize(sub)  # singularize for linking entities
+            # obj_ = obj_.split()
+            score = float(score)
+            typicality = float(typicality)
+            saliency = float(saliency)
+        except ValueError:
+            print("skip noisy row")
+            print(row)
+            incomplete_rows += 1
+            continue
+
+        # look for matches to graph nodes
+        if sub in tgt_objects and pred in tgt_rel and score >= args.quasi_t:  # and len(obj_)==1:
+            # obj_ = obj_[0]
+            if pred == 'has_property' and obj_ not in tgt_properties:
                 continue
 
-            # look for matches to graph nodes
-            if sub in tgt_objects and pred in tgt_rel and score >= args.quasi_t:  # and len(obj_)==1:
-                # obj_ = obj_[0]
-                if pred == 'has_property' and obj_ not in tgt_properties:
-                    continue
-
-                # print(' '.join([sub, pred, obj_, str(score), str(typicality), str(saliency)]))
-                obj_ = singularize(obj_)
-                entities_tocheck.append(obj_)
-                if pred not in commonsense_facts[sub].keys():
-                    commonsense_facts[sub][pred] = []
-                commonsense_facts[sub][pred].append((obj_, score))
+            # print(' '.join([sub, pred, obj_, str(score), str(typicality), str(saliency)]))
+            obj_ = singularize(obj_)
+            entities_tocheck.append(obj_)
+            if pred not in commonsense_facts[sub].keys():
+                commonsense_facts[sub][pred] = []
+            commonsense_facts[sub][pred].append((obj_, score))
 
     entities_tocheck = list(set(entities_tocheck))  # remove duplicates before level 2 query
     print("No of incomplete rows %i" % incomplete_rows)
     print("Second iter to check for entities to expand")
-    with open(args.quasi_src) as file:
-        tsv_file = csv.reader(file, delimiter="\t")
-        header = next(tsv_file)
-        rows = []
-        for row in tsv_file:
-            try:
-                sub, pred, obj_, modality, is_negative, score, sentence_score, typicality, saliency = row
-                sub = singularize(sub)
-                # obj_ = obj_.split()
-                score = float(score)
-                typicality = float(typicality)
-                saliency = float(saliency)
-            except ValueError:
-                print("skip noisy row")
+
+    tsv_gen = get_csv_data(args.quasi_src, delim="\t")
+    header = next(tsv_gen)
+    for row in tsv_gen:
+        try:
+            sub, pred, obj_, modality, is_negative, score, sentence_score, typicality, saliency = row
+            sub = singularize(sub)
+            # obj_ = obj_.split()
+            score = float(score)
+            typicality = float(typicality)
+            saliency = float(saliency)
+        except ValueError:
+            print("skip noisy row")
+            continue
+
+        # expand with concepts linked to graph entities (level 1)
+        if sub in entities_tocheck and pred in tgt_rel and score >= args.quasi_t:  # and len(obj_)==1:
+            # obj_ = obj_[0]
+            if pred == 'has_property' and obj_ not in tgt_properties:
                 continue
+            # print(' '.join([sub, pred, obj_, str(score), str(typicality), str(saliency)]))
 
-            # expand with concepts linked to graph entities (level 1)
-            if sub in entities_tocheck and pred in tgt_rel and score >= args.quasi_t:  # and len(obj_)==1:
-                # obj_ = obj_[0]
-                if pred == 'has_property' and obj_ not in tgt_properties:
-                    continue
-                # print(' '.join([sub, pred, obj_, str(score), str(typicality), str(saliency)]))
+            if sub not in commonsense_facts.keys():
+                commonsense_facts[sub] = {}
 
-                if sub not in commonsense_facts.keys():
-                    commonsense_facts[sub] = {}
-
-                if pred not in commonsense_facts[sub].keys():
-                    commonsense_facts[sub][pred] = []
-                commonsense_facts[sub][pred].append((obj_, score))
+            if pred not in commonsense_facts[sub].keys():
+                commonsense_facts[sub][pred] = []
+            commonsense_facts[sub][pred].append((obj_, score))
 
     print("Dictionary of extracted commonsense facts created!")
     with open(args.quasikb_path, 'w') as fp:

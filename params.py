@@ -52,10 +52,17 @@ def get_parser():
     parser.add_argument('--int_perc', default=0.05, help='Ratio of volume of figure object used for intersect spatial tests')
 
     #size reasoner
-    parser.add_argument('--extract_sizekb', type=str2bool, nargs='?', const=True, default=True,
+    parser.add_argument('--extract_sizekb', type=str2bool, nargs='?', const=False, default=False,
                         help='If True, also extracts the background size knowledge. '
                              'Otherwise, pre-extracted rels are assumed to be available ')
-    parser.add_argument('--sizekb_path', default='./data/obj_size_catalogue.json', help='Path to background size knowledge')
+    parser.add_argument('--sizekb_path', default='./data/lab_obj_catalogue_autom_valid.json', help='Path to background size knowledge')
+    parser.add_argument('--size_src', default='./data/shapenet_metadata_full.csv', help='Path to source size data')
+    parser.add_argument('--hardcoded_size_src', default='./data/lab_obj_catalogue_manual.csv', help='Path to hardcoded size measures')
+    parser.add_argument('--scraped_size_src', default='./data/scraped_objs', help='Path to Web-scraped size measures')
+    parser.add_argument('--flat_src', default='./data/lab_obj_catalogue_autom_valid.json',
+                        help='Manual annotations of flat/non-flat property, path to JSON file')
+    parser.add_argument('--sizetol', default=0.05, help='Tolerance when considering min and max size'
+                                                        'from hardcoded dimensions. Defaults to 5% of input dimension.')
 
     #Graph completion
     parser.add_argument('--extract_quasi', type=str2bool, nargs='?', const=False, default=False,
@@ -64,6 +71,7 @@ def get_parser():
     parser.add_argument('--quasikb_path', default='./data/commonsense_extracted.json', help='Path to background cs knowledge')
     parser.add_argument('--quasi_src', default='./data/quasimodo43.tsv', help='Path to source quasimodo data')
     parser.add_argument('--quasi_t', default=0.64, help='Threshold for filtering facts by confidence')
+    parser.add_argument('--material_src', default='./data/shapenet_materials.csv', help='Path to source material data')
 
     #Wordnet terms
     parser.add_argument('--extract_synsets', type=str2bool, nargs='?', const=False, default=False,
