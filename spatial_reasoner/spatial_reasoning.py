@@ -3,7 +3,7 @@ from collections import OrderedDict
 import networkx as nx
 from utils import plot_graph
 
-def spatial_reason(conn, cur, anchors, args):
+def build_QSR_graph(conn, cur, anchors, args):
 
     session = (conn,cur)
     QSRs = nx.MultiDiGraph()
@@ -27,7 +27,7 @@ def spatial_reason(conn, cur, anchors, args):
     #to visualize extracted QSR graph
     # plot_graph(QSRs)
 
-    return
+    return QSRs
 
 def remove_redundant_qsrs(qgraph):
 

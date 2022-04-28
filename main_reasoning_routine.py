@@ -8,12 +8,14 @@ from postgresql.basic_queries import retrieve_new_anchor_measurements
 from postgresql.spatial_queries import populate_with_boxes
 from postgresql.size_queries import populate_with_sizes
 
-from spatial_reasoner.spatial_reasoning import spatial_reason
+from spatial_reasoner.spatial_reasoning import build_QSR_graph
 
 from KB.size_kb import extract_size_kb
 from KB.spatial_kb import extract_spatial_kb
 from KB.commonsense_rels import extract_csk
 from KB.wordnet_linking import map_to_synsets
+
+from DL.ranking_aggregation import merge_DL_ranks
 
 def main():
 
@@ -65,12 +67,22 @@ def main():
     populate_with_sizes(connection,cursor) # estimate anchor sizes (based on bbox)
     print("Spatial DB completed with anchor bounding boxes and sizes")
 
-    #TODO aggregate DL rankings on same anchor
-    #TODO size reasoning based on background size KB
+    #TODO select which anchors in anchor_dict need correction
 
-    qsr_graph = spatial_reason(connection,cursor,anchor_dict,args_dict) # spatial reasoner
-    # TODO validate spatial relations based on background KB
-    # aggregate DL with/without reasoning + meta-reasoning options
+    qsr_graph = build_QSR_graph(connection, cursor, anchor_dict, args_dict) # extract QSR
+
+    for a_id, attr in anchor_dict.items():
+        #Aggregate DL rankings on same anchor
+        aggr_DL_rank = merge_DL_ranks(attr['DL_predictions'])
+        # TODO Validate merged ranking based on size KB
+        # TODO flag to decide if waterfall or parallel (meta-reasoning)
+        # TODO validate ranking based on spatial KB
+        # Note: consider in this case it will be confidence score
+        # to combine with typicalities. As opposed to distance scores to combine with
+        # atypicalities
+
+
+    # TODO scene assessment part
     # expand QSR graph based on Quasimodo concepts ./data/commonsense_extracted.json
     # check rules
     # once done with reasoning, mark all object anchors as complete
