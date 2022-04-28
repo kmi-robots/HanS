@@ -11,7 +11,7 @@ def build_QSR_graph(conn, cur, anchors, args):
     QSRs.add_nodes_from(ids_ord.keys()) # one node per anchor
 
     for i, o_id in enumerate(ids_ord.keys()):
-        figure_objs = find_neighbours(session, o_id, ids_ord, T=args.T)
+        figure_objs = find_neighbours(session, o_id, ids_ord, dis=args.dis)
         if len(figure_objs) > 0:
             QSRs = extract_QSR(session, o_id, figure_objs, QSRs, int_perc=args.int_perc)  # relations between objects
             # plot_graph(QSRs)
@@ -56,8 +56,8 @@ def order_by_volume(session, akeys):
     return OrderedDict(res) #preserve ordering in dict #{k[0]: {} for k in res}  # init with obj ids
 
 
-def find_neighbours(session, ref_id, ordered_objs,T=2):
-    """T = distance threshold to find neighbours, defaults to 2 units in the SRID of spatial DB"""
+def find_neighbours(session, ref_id, ordered_objs,dis=2):
+    """dis = distance threshold to find neighbours, defaults to 2 units in the SRID of spatial DB"""
     #Find nearby objects which are also smaller in the ordering
     i = list(ordered_objs.keys()).index(ref_id)
     candidates = list(ordered_objs.keys())[i+1:] #candidate figure objects, i.e., smaller
@@ -67,7 +67,7 @@ def find_neighbours(session, ref_id, ordered_objs,T=2):
                     ' WHERE ST_3DDWithin(bbox, '\
                     '(SELECT bbox FROM anchors '\
                     'WHERE anchor_key = %s), %s) '\
-                    'AND anchor_key != %s', (ref_id,str(T),ref_id))
+                    'AND anchor_key != %s', (ref_id,str(dis),ref_id))
 
     nearby = [t[0] for t in tmp_cur.fetchall()]
     return [id_ for id_ in nearby if id_ in candidates] # return only the ones which are both nearby and smaller than

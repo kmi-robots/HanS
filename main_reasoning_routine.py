@@ -16,6 +16,7 @@ from KB.commonsense_rels import extract_csk
 from KB.wordnet_linking import map_to_synsets
 
 from DL.ranking_aggregation import merge_DL_ranks
+from size_reasoner.size_reasoning import size_validate
 
 def main():
 
@@ -67,20 +68,23 @@ def main():
     populate_with_sizes(connection,cursor) # estimate anchor sizes (based on bbox)
     print("Spatial DB completed with anchor bounding boxes and sizes")
 
-    #TODO select which anchors in anchor_dict need correction
-
     qsr_graph = build_QSR_graph(connection, cursor, anchor_dict, args_dict) # extract QSR
 
     for a_id, attr in anchor_dict.items():
         #Aggregate DL rankings on same anchor
         aggr_DL_rank = merge_DL_ranks(attr['DL_predictions'])
-        # TODO Validate merged ranking based on size KB
+
+        # TODO select which anchors in anchor_dict need correction (based on aggr confidence)
+
         # TODO flag to decide if waterfall or parallel (meta-reasoning)
+
+        # Validate merged ranking based on size KB
+        sizev_rank = size_validate(aggr_DL_rank, cursor, a_id, sizeKB)
+
         # TODO validate ranking based on spatial KB
         # Note: consider in this case it will be confidence score
         # to combine with typicalities. As opposed to distance scores to combine with
         # atypicalities
-
 
     # TODO scene assessment part
     # expand QSR graph based on Quasimodo concepts ./data/commonsense_extracted.json

@@ -26,3 +26,31 @@ def populate_with_sizes(connection,cursor):
                 'WHERE anchor_key = %s;'
         cursor.execute(sizeq, (d1,d2,d3,id_))
         connection.commit()
+
+def retrieve_dims(cur, anchor_k):
+    """Given anchor key, returns list of estimated dimensions"""
+    query = "SELECT d1, d2, d3 " \
+            "FROM anchors " \
+            "WHERE anchor_key = '{}' "
+
+    cur.execute(query.format(anchor_k))
+    return list(cur.fetchone())
+
+def find_frontbox_shape(cur, anchor_k, dims):
+    """Returns the height and width of the front halfspace
+    that is used to then to derive the Aspect Ratio of the object"""
+    d1, d2 = dims
+    # d3 is always the height, based on how we add measures (see populate_with_sizes method)
+    #TODO change fields in anchors table
+
+    query = "SELECT d3, fronth, frontw " \
+            "FROM anchors " \
+            "WHERE anchor_key = '{}' "
+    cur.execute(query.format(anchor_k))
+
+    height, fronth, frontw =list(cur.fetchone())
+    # Compare frontw, frontd with object's d1 and d2
+    # The one between frontw and frontd that is equal to either of d1 and d2 is the dim we want
+    tgt_dim = None
+    return (height, tgt_dim)
+

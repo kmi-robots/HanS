@@ -45,8 +45,3 @@ def retrieve_anchors(cur):
     return [(r[0], r[1]) for r in cur.fetchall()]
 
 
-def update_union_chull(ma_list, connection, cursor):
-
-    pass
-
-

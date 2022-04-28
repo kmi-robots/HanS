@@ -46,7 +46,7 @@ def get_parser():
                         help='Path to background spatial knowledge')
     parser.add_argument('--vg_src)', default='./data/relationships.json', help='Path to source Visual Genome relationships')
     parser.add_argument('--sf', default=1.2, help='Scaling factor to extrude object halfspaces')
-    parser.add_argument('--T', default=2, help='Distance threshold to find neighbours, defaults to 2 units in the SRID of spatial DB')
+    parser.add_argument('--dis', default=2, help='Distance threshold to find neighbours, defaults to 2 units in the SRID of spatial DB')
     parser.add_argument('--fht', default=0.15, help='Threshold to find objects that are at floor height, i.e., min Z coordinate = 0')
     parser.add_argument('--wht', default=0.259, help='Threshold to decide if object touches wall surfaces - e.g., by default 20 cm')
     parser.add_argument('--int_perc', default=0.05, help='Ratio of volume of figure object used for intersect spatial tests')
@@ -63,6 +63,9 @@ def get_parser():
                         help='Manual annotations of flat/non-flat property, path to JSON file')
     parser.add_argument('--sizetol', default=0.05, help='Tolerance when considering min and max size'
                                                         'from hardcoded dimensions. Defaults to 5% of input dimension.')
+    parser.add_argument('--Lambda', default=0.0, type=float, help='Set of cutoff thresholds for quantising the thickness')
+    parser.add_argument('--T', default=0.0, type=float, help='Set of cutoff thresholds for quantising the area')
+    parser.add_argument('--w0', default=1.4, type=float, help='Ratio for quantising the Aspect Ratio')
 
     #Graph completion
     parser.add_argument('--extract_quasi', type=str2bool, nargs='?', const=False, default=False,

@@ -124,6 +124,10 @@ def populate_with_boxes(connection,cursor, sf=1.2):
         #front is the nearest one to robot position
         front_idx = all_dis.index(min(all_dis))
         fronths = all_hss[front_idx]
+
+        #TODO find height and width of front halfspace (used later for AR)
+
+
         #Is the index found for fronths odd or even? Take other hs along same axis as back hs
         if front_idx % 2 == 0:
             back_idx = [indd for indd in range(4) if indd %2==0 and indd!=front_idx][0] #other even index that is not the fron one
