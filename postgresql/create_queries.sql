@@ -42,3 +42,7 @@ CREATE TABLE IF NOT EXISTS vg_rels(
     predicate_name varchar NOT NULL,
     subject_polygon geometry,
     object_top_projection geometry);
+
+CREATE TABLE IF NOT EXISTS sw_walls(
+        id serial PRIMARY KEY,
+        surface geometry NOT NULL);

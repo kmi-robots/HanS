@@ -79,10 +79,14 @@ def get_parser():
                              'Otherwise, the mapping linked in syn_path is assumed as available ')
     parser.add_argument('--syn_path', default='./data/class_to_synset.json', help='Path to class name / synset mapping')
 
+    #Map of the environment
+    parser.add_argument("--map_img", default='./map/south_wing.pgm', help="Path to the pgm image of the map")
+    parser.add_argument("--map_cfg", default='./map/south_wing.yaml', help="Path to yaml file with map configuration")
+    parser.add_argument("--wall_height", default=4, type=int, help="Height for extruding walls, in meters. Defaults to 4.")
+
     # Data viz
     parser.add_argument('--bbox_color', default=(255, 0, 0), help='Color of detected bboxes')
     parser.add_argument('--bbox_thick', default=2, help='Border thickness of detected bboxes')
-
     return parser
 
 

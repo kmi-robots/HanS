@@ -15,6 +15,7 @@ tgt_rel =['be made of','be made from', 'cause', 'need','has_property', 'has_effe
 
 tgt_properties= ['ignition','flammable', 'combustible', 'hazard', 'dangerous', 'harmful', 'unsafe']
 
+#TODO add materials from shapenet (path under args.material_src)
 
 def extract_csk(args):
     """Extract commonsense facts from Quasimodo"""
