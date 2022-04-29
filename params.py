@@ -63,8 +63,10 @@ def get_parser():
                         help='Manual annotations of flat/non-flat property, path to JSON file')
     parser.add_argument('--sizetol', default=0.05, help='Tolerance when considering min and max size'
                                                         'from hardcoded dimensions. Defaults to 5% of input dimension.')
-    parser.add_argument('--Lambda', default=0.0, type=float, help='Set of cutoff thresholds for quantising the thickness')
-    parser.add_argument('--T', default=0.0, type=float, help='Set of cutoff thresholds for quantising the area')
+    parser.add_argument('--Lambda', default=[-2.20, -1.0759355070093815, -0.12742443778308354], type=float, help='Set of cutoff thresholds for quantising the thickness. '
+                                                                                                                               'Negative to be compared with logarithms.')
+    parser.add_argument('--T', default=[-4.149075426919093, -2.776689935975939, -1.4043044450327855, -0.0319189540896323], help='Set of cutoff thresholds for quantising the area. '
+                                                                                                                                'Negative to be compared with logarithms.')
     parser.add_argument('--w0', default=1.4, type=float, help='Ratio for quantising the Aspect Ratio')
 
     #Graph completion

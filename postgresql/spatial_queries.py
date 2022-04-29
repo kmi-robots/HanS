@@ -125,8 +125,13 @@ def populate_with_boxes(connection,cursor, sf=1.2):
         front_idx = all_dis.index(min(all_dis))
         fronths = all_hss[front_idx]
 
-        #TODO find height and width of front halfspace (used later for AR)
-
+        #Find height and width of front halfspace (used later for AR)
+        qwh = 'SELECT  ST_Distance(ST_PointN(ST_ExteriorRing(%s), 1), ' \
+                'ST_PointN(ST_ExteriorRing(%s), 2)) AS d1, ' \
+                'ST_Distance(ST_PointN(ST_ExteriorRing(%s), 2) ,' \
+                'ST_PointN(ST_ExteriorRing(%s), 3)) AS d2 '
+        cursor.execute(qwh, (fronths,fronths,fronths,fronths))
+        frontd1, frontd2 = cursor.fetchone()
 
         #Is the index found for fronths odd or even? Take other hs along same axis as back hs
         if front_idx % 2 == 0:
@@ -154,11 +159,13 @@ def populate_with_boxes(connection,cursor, sf=1.2):
         up_others = 'UPDATE anchors SET  lefthsproj = ST_Translate(ST_Extrude(%s, 0, 0, %s), 0, 0, %s),' \
                     ' righthsproj = ST_Translate(ST_Extrude(%s, 0, 0, %s), 0, 0, %s),' \
                     ' fronthsproj = ST_Translate(ST_Extrude(%s, 0, 0, %s), 0, 0, %s),' \
-                    ' backhsproj = ST_Translate(ST_Extrude(%s, 0, 0, %s), 0, 0, %s)' \
+                    ' backhsproj = ST_Translate(ST_Extrude(%s, 0, 0, %s), 0, 0, %s),' \
+                    ' frontd1 = %s,' \
+                    ' frontd2 = %s' \
                     ' WHERE anchor_key = %s;'
         cursor.execute(up_others,
                                 (lefths, str(height), zmin, righths, str(height), zmin,
-                                 fronths,str(height), zmin, backhs,str(height), zmin, id_))
+                                 fronths,str(height), zmin, backhs,str(height), zmin, frontd1, frontd2, id_))
         connection.commit()
 
 

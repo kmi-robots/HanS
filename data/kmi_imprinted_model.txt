@@ -51,7 +51,7 @@
 50  sofa
 51  window
 52  electric_heater
-53  pile_of_papers
+53  pile_of_paper
 54  projector
 55  desk_phone
 56  power_cord

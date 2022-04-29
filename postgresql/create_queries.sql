@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS anchors(
     d1 double precision,
     d2 double precision,
     d3 double precision,
+    frontd1 double precision,
+    frontd2 double precision,
     robot_position geometry
     );
 

@@ -20,26 +20,65 @@ w0 = args_dict.w0
 def size_validate(input_r, cur, anchor_key, sizebase):
     """Given an input ranking,
             retains only the classes that are valid wrt to their size"""
+    global class_map
     estimated_dims = retrieve_dims(cur, anchor_key)
     frontbox_shape = find_frontbox_shape(cur, anchor_key, estimated_dims[:2])
     sres = find_size_candidates(estimated_dims, sizebase, frontbox_shape)
     candidates_num, candidates_num_flat, candidates_num_thin, candidates_num_flatAR, candidates_num_thinAR = sres
-    #TODO filter input_r based on size candidates
-    return []
+    #Filter input ranking based on size candidates
+    valid_rank_area = [(cid, score) for cid, score in input_r if cid in candidates_num]
+    valid_rank_flat = [(cid, score) for cid, score in input_r if cid in candidates_num_flat]
+    valid_rank_thin = [(cid, score) for cid, score in input_r if cid in candidates_num_thin]
+    valid_rank_flatAR = [(cid, score) for cid, score in input_r if cid in candidates_num_flatAR]
+    valid_rank_thinAR = [(cid, score) for cid, score in input_r if cid in candidates_num_thinAR]
+
+    #Print results divided by size property but return only
+    # the ranking where all three size properties (area,thickness,AR) are considered
+    read_input = [(target_classes[cid], score) for cid, score in input_r]
+    read_rank_area = [(target_classes[cid], score) for cid, score in valid_rank_area]
+    read_rank_flat = [(target_classes[cid], score) for cid, score in valid_rank_flat]
+    read_rank_thin = [(target_classes[cid], score) for cid, score in valid_rank_thin]
+    read_rank_flatAR = [(target_classes[cid], score) for cid, score in valid_rank_flatAR]
+    read_rank_thinAR = [(target_classes[cid], score) for cid, score in valid_rank_thinAR]
+
+    print("Original top-5 ranking:")
+    print(read_input[:5])
+
+    print("Area top-5 ranking:")
+    print(read_rank_area[:5])
+
+    print("Flat/non-flat top-5 ranking:")
+    print(read_rank_flat[:5])
+
+    print("Thickness top-5 ranking:")
+    print(read_rank_thin[:5])
+
+    print("Flat+AR top-5 ranking:")
+    print(read_rank_flatAR[:5])
+
+    print("Thick+AR top-5 ranking:")
+    print(read_rank_thinAR[:5])
+
+    return valid_rank_thinAR
 
 
 def find_size_candidates(estimated_dims, KB, box_shape):
 
     """Returns candidate classes based on the estimated sizes"""
+    global class_map
+    qual, is_flat, aspect_ratio, thinness = quantize(estimated_dims, box_shape)
 
-    qual, flat, aspect_ratio, thinness = quantize(estimated_dims, box_shape)
+    if is_flat: flat='flat'
+    else: flat='non-flat'
+    print("Object is '{}', '{}', '{}', '{}' ".format(qual,flat,thinness,aspect_ratio))
+
     """ Hybrid (area) """
     candidates = [oname for oname in KB.keys() if qual in str(
         KB[oname]["has_size"])]  # len([s for s in self.KB[oname]["has_size"] if s.startswith(qual)])>0]
     candidates_num = [class_map[oname.replace(' ', '_')] for oname in candidates]
 
     """ Hybrid (area + flat) """
-    candidates_flat = [oname for oname in candidates if str(flat) in str(KB[oname]["is_flat"])]
+    candidates_flat = [oname for oname in candidates if str(is_flat) in str(KB[oname]["is_flat"])]
     candidates_num_flat = [class_map[oname.replace(' ', '_')] for oname in candidates_flat]
 
     """ Hybrid (area + thin) """
