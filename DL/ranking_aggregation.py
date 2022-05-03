@@ -4,7 +4,7 @@
 
 import statistics
 
-def merge_DL_ranks(r_list):
+def merge_scored_ranks(r_list):
 
     # Given a list of m rankings of length n (no. of candidate objects)
     # returns a single ranking in the form (class, score)

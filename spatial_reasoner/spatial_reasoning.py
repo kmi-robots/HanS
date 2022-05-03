@@ -2,6 +2,19 @@
 from collections import OrderedDict
 import networkx as nx
 from utils import plot_graph
+import itertools
+import statistics
+from collections import Counter
+
+from params import get_parser
+from pycoral.utils.dataset import read_label_file
+from DL.ranking_aggregation import merge_scored_ranks
+
+parser = get_parser()
+args_dict, unknown = parser.parse_known_args()
+target_classes = read_label_file(args_dict.classes)
+class_map = dict((v, k) for k, v in target_classes.items())  # swap keys with indices
+
 
 def build_QSR_graph(conn, cur, anchors, args):
 
@@ -9,6 +22,7 @@ def build_QSR_graph(conn, cur, anchors, args):
     QSRs = nx.MultiDiGraph()
     ids_ord = order_by_volume((conn,cur), list(anchors.keys()))
     QSRs.add_nodes_from(ids_ord.keys()) # one node per anchor
+    nx.set_node_attributes(QSRs, "", "DL_label")  # init field for DL prediction for later use
 
     for i, o_id in enumerate(ids_ord.keys()):
         figure_objs = find_neighbours(session, o_id, ids_ord, dis=args.dis)
@@ -28,6 +42,206 @@ def build_QSR_graph(conn, cur, anchors, args):
     # plot_graph(QSRs)
 
     return QSRs
+
+def spatial_validate(node_id, DLrank, sizerank, QSRs, KB, taxonomy, meta='waterfall'):
+
+    """If meta=waterfall, validates sizerank
+    Both reasoners applied in cascade.
+    If meta=parallel, checks DLrank and sizerank separately and combines both by majority voting
+    Assumes in this case that inputs are ranked by descending confidence and uses typicality scores,
+    to be changed to atypicality in the case inputs are ranked by ascending distance
+    ML predictions are used as spatial labels, i.e., no ground truth, as this code is intended for live use
+    Only ML predictions above confidence threshold dlconf are considered
+    """
+    dlclasses, dlscores = zip(*DLrank)
+
+    if target_classes[dlclasses[0]] =='person': #if top pred is a person, skip spatial validation
+        print("Recognised as person, cannot determine typical locations")
+        return sizerank
+
+    if meta =='waterfall':
+        input_rankings = [sizerank] # only size-validated DL ranking (rankings modified on cascade)
+    elif meta == 'parallel':
+        input_rankings = [DLrank, sizerank] # DL and size-validated ranking are input in parallel
+
+    out_ranks = []
+    for inputr in input_rankings:
+        spacerank = inputr.copy() # starting by size validated ranking
+        spacecls, spacescores = zip(*spacerank)
+        spacecls, spacescores = list(spacecls), list(spacescores)
+        for i, (cid, score) in enumerate(inputr):
+            pred_label = target_classes[cid]
+            wn_syn = taxonomy[pred_label] #wordnet synsets associated with label
+
+            fig_qsrs = [(pred_label, QSRs.nodes[ref]["DL_label"], r['QSR'])
+                        for f, ref, r in QSRs.out_edges(node_id, data=True) if ref not in ['wall', 'floor']
+                        and dlscores[dlclasses.index(class_map[QSRs.nodes[ref]["DL_label"]])] >= args_dict.dlconf]  # rels where obj is figure
+            ref_qsrs = [(QSRs.nodes[f]["DL_label"], pred_label, r['QSR'])
+                        for f, ref, r in QSRs.in_edges(node_id, data=True) if
+                        f not in ['wall', 'floor']
+                        and dlscores[dlclasses.index(class_map[QSRs.nodes[ref]["DL_label"]])] >= args_dict.dlconf]
+
+            # Retrieve wall and floor QSRs, only in figure/reference form - e.g., 'object onTopOf
+            surface_qsrs = [(pred_label, ref, r['QSR']) for f, ref, r \
+                            in QSRs.out_edges(node_id, data=True) if ref in ['wall', 'floor']]  # only those in fig/ref form
+            fig_qsrs.extend(surface_qsrs)  # merge into list of fig/ref relations
+
+            if not wn_syn or pred_label=='person' or (len(ref_qsrs)==0 and len(fig_qsrs)==0):
+                # objects that do not have a mapping to VG through WN (foosball table and pigeon holes)
+                # we skip people as they are mobile and can be anywhere, space is not discriminating
+                # OR there are no QSRs to consider
+                spacescores[i] += 0. #set total score to 0. typicality, so the DL score does not change
+
+            #Find scores for relations where obj is figure
+            spatial_scores = modify_with_typicalities(wn_syn, fig_qsrs,taxonomy, KB, relform='figure')
+            # Similarly, for QSRs where predicted obj is reference, i.e., object
+            spatial_scores = modify_with_typicalities(wn_syn, ref_qsrs, taxonomy, KB, relform='reference', all_spatial_scores=spatial_scores)
+
+            # Average across all QSRs
+            avg_spatial_score = statistics.mean(spatial_scores)
+            spacescores[i] += avg_spatial_score # add up to ML score
+
+        # Normalise combined scores cross-class so they are between 0 and 1
+        min_, max_ = min(spacescores), max(spacescores)
+        if max_ - min_ != 0:  # avoid division by zero
+            spacescores_norm = [(x - min_) / (max_ - min_) for x in spacescores]
+        spacerank_mod = list(zip(spacecls, spacescores_norm))
+        # re-sort by descending confidence scores
+        spacerank_mod = sorted(spacerank_mod, key=lambda x: (x[1], x[1]), reverse=True)
+        out_ranks.append(spacerank_mod)
+
+    if meta =='waterfall':
+        return out_ranks[0] # only one output
+    elif meta == 'parallel':
+        #merge two output rankings by avg score, if score not null,
+        # i.e., we reuse the same strategy as when aggregating across observations
+
+        spatialclasses =[]
+        out_ranks_valid = []
+        for outr_ in out_ranks: #keep only classes of non-zero score after combining DL and spatial typicalities
+            spatialclasses.extend([cnum for cnum, jconf in outr_ if jconf > 0.])
+            out_ranks_valid.append([(cnum, jconf) for cnum, jconf in outr_ if jconf > 0.])
+        """if len(spatialclasses) == 0: #should not happen in this case because at least DL has a score 
+            #there were no useful scores through spatial reasoning
+            print("Keep size ranking")
+            return sizerank"""
+
+        mrank = merge_scored_ranks(out_ranks_valid)
+
+        return mrank
+
+
+def modify_with_typicalities(in_syns, qsrlist, classtax, spatialdict, relform='figure', all_spatial_scores = []):
+
+    relset = list(set([r for _, _, r in qsrlist]))  # distinct figure relations present
+    static_syn = in_syns
+    for fig, ref, r in qsrlist:  # for each QSR where obj is figure, i.e., subject
+        if relform == 'figure':
+            tgt_syn = ref
+        elif relform == 'reference':
+            tgt_syn = fig
+
+        if tgt_syn == 'wall':
+            tgt_syn = ['wall.n.01']  # cases where reference is wall or floor
+        elif tgt_syn == 'floor':
+            tgt_syn = ['floor.n.01']
+        else:
+            tgt_syn = classtax[ref]
+
+        if tgt_syn == '' or static_syn=='':  # obj is e.g., foosball table or pigeon holes (absent from background KB)
+            all_spatial_scores.append(0.)  # add up 0. as if not found to not alter ML ranking and skip
+            continue
+
+        if r == 'touches':
+            if len(relset) == 1:  # touches is the only rel
+                all_spatial_scores.append(0.)  # add up 0. as if not found to not alter ML ranking and skip
+                continue
+            else:
+                continue  # there are other types, just skip this one as not relevant for VG
+        elif r == 'beside':
+            continue  # beside already checked through L/R rel
+        elif r == 'leansOn' or r == 'affixedOn':
+            r = 'against'  # mapping on VG predicate
+
+        if relform == 'figure':
+            all_spatial_scores = compute_all_scores(spatialdict, all_spatial_scores, static_syn, tgt_syn, r)
+        elif relform == 'reference': # swap sub-obj order in method call
+            all_spatial_scores = compute_all_scores(spatialdict, all_spatial_scores, tgt_syn, static_syn, r)
+
+    return all_spatial_scores
+
+def compute_all_scores(spacedict, all_scores, sub_syn, obj_syn, r):
+
+    if len(sub_syn) > 1 or len(obj_syn) > 1:
+        if len(sub_syn) > 1 and len(obj_syn) > 1:  # try all sub,obj ordered combos
+            # print(list(itertools.product(sub_syn, obj_syn)))
+            typscores = [compute_typicality_score(spacedict, sub_s, obj_s, r) \
+                         for sub_s, obj_s in list(itertools.product(sub_syn, obj_syn))]
+        elif len(sub_syn) == 1 and len(obj_syn) > 1:
+            sub_syn = sub_syn[0]
+            typscores = [compute_typicality_score(spacedict, sub_syn, osyn, r) for osyn in obj_syn]
+        elif len(sub_syn) > 1 and len(obj_syn) == 1:
+            obj_syn = obj_syn[0]
+            typscores = [compute_typicality_score(spacedict, subs, obj_syn, r) for subs in sub_syn]
+
+        typscores = [s for s in typscores if s != 0.]  # keep only synset that of no-null typicality
+        # in order of taxonomy (from preferred synset to least preferred)
+        if len(typscores) == 0:
+            typscore = 0.
+        else:
+            typscore = typscores[0]  # first one in the order
+
+    else:
+        sub_syn, obj_syn = sub_syn[0], obj_syn[0]
+        typscore = compute_typicality_score(spacedict, sub_syn, obj_syn, r)
+    all_scores.append(typscore)  # Typicality score comparable with DL confidence scores )
+                                # Change to complement to 1 (i.e., atypicality) if DL uses distance scores
+    return all_scores
+
+def compute_typicality_score(VGstats, sub_syn, obj_syn, rel, use_beside=False, use_near=False):
+    # no of times the two appeared in that relation in VG
+    try:
+        nom = float(VGstats['predicates'][rel]['relations'][str((str(sub_syn), str(obj_syn)))])
+    except KeyError:  # if any hit is found
+        if rel != 'above':
+            if rel == 'leftOn' or rel == 'rightOf':  # check also hits for (more generic) beside predicate
+                try:
+                    nom = float(VGstats['predicates']['beside']['relations'][
+                                    str((str(sub_syn), str(obj_syn)))])
+                    use_beside = True
+                except KeyError:
+                    return 0.
+            else:  # check also hits for (more generic) near predicate
+                try:
+                    nom = float(
+                        VGstats['predicates']['near']['relations'][str((str(sub_syn), str(obj_syn)))])
+                    use_near = True
+                except KeyError:
+                    return 0.
+        else:
+            return 0.
+    # no of times sub_syn was subject of r relation in VG
+    try:
+        if use_near:
+            denom1 = float(VGstats['subjects'][sub_syn]['near'])
+        elif use_beside:
+            denom1 = float(VGstats['subjects'][sub_syn]['beside'])
+        else:
+            denom1 = float(VGstats['subjects'][sub_syn][rel])
+    except KeyError:  # if any hit is found
+        return 0.
+    # no of times obj_syn was object of r relation in VG
+    try:
+        if use_near:
+            denom2 = float(VGstats['objects'][obj_syn]['near'])
+        elif use_beside:
+            denom2 = float(VGstats['objects'][obj_syn]['beside'])
+        else:
+            denom2 = float(VGstats['objects'][obj_syn][rel])
+    except KeyError:  # if any hit is found
+        return 0.
+    return nom / (denom1 + denom2 - nom)
+
 
 def remove_redundant_qsrs(qgraph):
 

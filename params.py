@@ -32,11 +32,18 @@ def get_parser():
     parser.add_argument('--dbuser', default=os.environ['USER'], help='Username of postgresql database')
     parser.add_argument('--dbname', default='gis_database', help='Postgresql database name')
 
+
     # PCL Outlier removal
     parser.add_argument('--vx', default=5, help='Number of points per voxel kept during downsampling')
     parser.add_argument('--std_r', default=2.0, help='Standard deviation threshold for statistical outlier removal')
     parser.add_argument('--eps', default=0.05, help='DBSCAN eps value')
     parser.add_argument('--minp', default=10, help='DBSCAN min no of points')
+
+    #which meta-reasoning strategy?
+    parser.add_argument('--meta', nargs='?',choices=['waterfall', 'parallel'],
+                        default="waterfall", help='Metareasoning strategy: waterfall | parallel')
+    parser.add_argument('--dlconf', default=0.5, help='Confidence threshold for selecting which predictions to correct')
+
 
     #spatial reasoner
     parser.add_argument('--extract_spatialkb', type=str2bool, nargs='?', const=False, default=False,

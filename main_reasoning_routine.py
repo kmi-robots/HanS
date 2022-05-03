@@ -8,14 +8,14 @@ from postgresql.basic_queries import retrieve_new_anchor_measurements
 from postgresql.spatial_queries import populate_with_boxes
 from postgresql.size_queries import populate_with_sizes
 
-from spatial_reasoner.spatial_reasoning import build_QSR_graph
+from spatial_reasoner.spatial_reasoning import build_QSR_graph,spatial_validate
 
 from KB.size_kb import extract_size_kb
 from KB.spatial_kb import extract_spatial_kb
 from KB.commonsense_rels import extract_csk
 from KB.wordnet_linking import map_to_synsets
 
-from DL.ranking_aggregation import merge_DL_ranks
+from DL.ranking_aggregation import merge_scored_ranks
 from size_reasoner.size_reasoning import size_validate
 
 def main():
@@ -68,23 +68,30 @@ def main():
     populate_with_sizes(connection,cursor) # estimate anchor sizes (based on bbox)
     print("Spatial DB completed with anchor bounding boxes and sizes")
 
+    print("Extracting observed QSR between objects")
     qsr_graph = build_QSR_graph(connection, cursor, anchor_dict, args_dict) # extract QSR
 
+    print("Aggregating DL predictions across observations")
+    aggr_ranks = []
     for a_id, attr in anchor_dict.items():
         #Aggregate DL rankings on same anchor
-        aggr_DL_rank = merge_DL_ranks(attr['DL_predictions'])
+        aggr_DL_rank = merge_scored_ranks(attr['DL_predictions'])
 
         # TODO select which anchors in anchor_dict need correction (based on aggr confidence)
+        # annotate qsr graph with top1 DL pred
+        topclass = target_classes[aggr_DL_rank[0][0]]
+        qsr_graph.nodes[a_id]["DL_label"] = topclass
+        aggr_ranks.append((a_id, aggr_DL_rank))
 
-        # TODO flag to decide if waterfall or parallel (meta-reasoning)
-
+    print("Reasoning on object anchors")
+    for a_id, aggr_DL_rank in aggr_ranks: #TODO only loop through those that need correction
         # Validate merged ranking based on size KB
         sizev_rank = size_validate(aggr_DL_rank, cursor, a_id, sizeKB)
-
-        # TODO validate ranking based on spatial KB
-        # Note: consider in this case it will be confidence score
-        # to combine with typicalities. As opposed to distance scores to combine with
-        # atypicalities
+        # Validate ranking based on spatial KB
+        spatial_outrank = spatial_validate(a_id, aggr_DL_rank,sizev_rank, qsr_graph, spatialKB, target_synsets, meta=args_dict.meta)
+        read_input = [(target_classes[cid], score) for cid, score in spatial_outrank]
+        print("Ranking post meta-reasoning")
+        print(read_input)
 
     # TODO scene assessment part
     # expand QSR graph based on Quasimodo concepts ./data/commonsense_extracted.json
