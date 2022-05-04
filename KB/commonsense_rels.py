@@ -1,6 +1,4 @@
 """Extraction of commonsense facts for graph completion from the Quasimodo resource"""
-import csv
-import sys
 
 from pattern.text.en import singularize
 import json
@@ -8,26 +6,54 @@ import json
 from utils import get_csv_data
 
 tgt_objects = ['book', 'fire door','safety sign', 'fire extinguisher', 'chair', 'trash can', 'kettle',
-               'electric heater', 'desk', 'electric cable', 'power socket', 'plug', 'person']
+               'electric heater', 'desk', 'electric cable', 'power socket', 'plug', 'person', 'radiator']
+
+tgt_objects_single = [s.split(' ') for s in tgt_objects]
+
 
 tgt_rel =['be made of','be made from', 'cause', 'need','has_property', 'has_effect',
           'be important in', 'be useful in', 'get']
 
 tgt_properties= ['ignition','flammable', 'combustible', 'hazard', 'dangerous', 'harmful', 'unsafe']
 
-#TODO add materials from shapenet (path under args.material_src)
+#Add materials from shapenet (path under args.material_src)
 
 def extract_csk(args):
-    """Extract commonsense facts from Quasimodo"""
+
     commonsense_facts = {k: {} for k in tgt_objects}
 
+    """Extract materials from ShapeNet"""
+    mat_gen = get_csv_data(args.material_src, delim=",")
+    # skip header
+    shpheader = next(mat_gen)
+    print("ShapeNet header:")
+    print(shpheader)
+
+    entities_tocheck = []
+    for row in mat_gen:
+        kw = row[0].lower()
+        match_idx = [n for n, subl in enumerate(tgt_objects_single) if kw in subl]
+        if len(match_idx) > 0:
+            tgt_k = tgt_objects[match_idx[0]]# matching string will be the considered object
+
+            if 'madeof' not in commonsense_facts[tgt_k].keys():
+                commonsense_facts[tgt_k]['madeof']=[]
+
+            # print((row[1].lower(), str(float(row[2])*100)+'%'))
+            commonsense_facts[tgt_k]['madeof'].append((row[1], str(float(row[2])*100)+'%')) # append material and ratio of material
+            # in quasimodo the tuples are property (can be also a material) and score instead
+            # Add shapenet material also to list of entities to be checked against quasimodo later
+            # e.g., if paper is found check if it is flammable
+            entities_tocheck.append(row[1].lower())
+
+    """Extract commonsense facts from Quasimodo"""
     tsv_gen = get_csv_data(args.quasi_src, delim="\t")
     header = next(tsv_gen)
-    print("Data header:")
+    print("Quasimodo header:")
     print(header)
 
     incomplete_rows = 0
-    entities_tocheck = []
+
     for row in tsv_gen:
         try:
             sub, pred, obj_, modality, is_negative, score, sentence_score, typicality, saliency = row
@@ -48,6 +74,8 @@ def extract_csk(args):
             if pred == 'has_property' and obj_ not in tgt_properties:
                 continue
 
+            if pred in ['be made of','be made from']:
+                pred = 'madeof' # so it is aggregated with materials added previously from Shapenet
             # print(' '.join([sub, pred, obj_, str(score), str(typicality), str(saliency)]))
             obj_ = singularize(obj_)
             entities_tocheck.append(obj_)
@@ -67,8 +95,8 @@ def extract_csk(args):
             sub = singularize(sub)
             # obj_ = obj_.split()
             score = float(score)
-            typicality = float(typicality)
-            saliency = float(saliency)
+            # typicality = float(typicality)
+            # saliency = float(saliency)
         except ValueError:
             print("skip noisy row")
             continue
@@ -79,6 +107,9 @@ def extract_csk(args):
             if pred == 'has_property' and obj_ not in tgt_properties:
                 continue
             # print(' '.join([sub, pred, obj_, str(score), str(typicality), str(saliency)]))
+
+            if pred in ['be made of','be made from']:
+                pred = 'madeof'
 
             if sub not in commonsense_facts.keys():
                 commonsense_facts[sub] = {}

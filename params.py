@@ -46,7 +46,7 @@ def get_parser():
 
 
     #spatial reasoner
-    parser.add_argument('--extract_spatialkb', type=str2bool, nargs='?', const=False, default=False,
+    parser.add_argument('--extract_spatialkb', type=str2bool, nargs='?', default=False,
                         help='If True, also extracts the background spatial knowledge from VG. '
                              'Otherwise, pre-extracted rels from VG are assumed to be available ')
     parser.add_argument('--spatialkb_path', default='./data/VG_spatial_stats.json',
@@ -59,7 +59,7 @@ def get_parser():
     parser.add_argument('--int_perc', default=0.05, help='Ratio of volume of figure object used for intersect spatial tests')
 
     #size reasoner
-    parser.add_argument('--extract_sizekb', type=str2bool, nargs='?', const=False, default=False,
+    parser.add_argument('--extract_sizekb', type=str2bool, nargs='?', default=False,
                         help='If True, also extracts the background size knowledge. '
                              'Otherwise, pre-extracted rels are assumed to be available ')
     parser.add_argument('--sizekb_path', default='./data/lab_obj_catalogue_autom_valid.json', help='Path to background size knowledge')
@@ -77,7 +77,7 @@ def get_parser():
     parser.add_argument('--w0', default=1.4, type=float, help='Ratio for quantising the Aspect Ratio')
 
     #Graph completion
-    parser.add_argument('--extract_quasi', type=str2bool, nargs='?', const=False, default=False,
+    parser.add_argument('--extract_quasi', type=str2bool, nargs='?', default=False,
                         help='If True, also extracts background knowledge from Quasimodo. '
                              'Otherwise, pre-extracted kb assumed to be available ')
     parser.add_argument('--quasikb_path', default='./data/commonsense_extracted.json', help='Path to background cs knowledge')
@@ -86,7 +86,7 @@ def get_parser():
     parser.add_argument('--material_src', default='./data/shapenet_materials.csv', help='Path to source material data')
 
     #Wordnet terms
-    parser.add_argument('--extract_synsets', type=str2bool, nargs='?', const=False, default=False,
+    parser.add_argument('--extract_synsets', type=str2bool, nargs='?', default=False,
                         help='If True, also extracts synsets for target classes from WordNet. '
                              'Otherwise, the mapping linked in syn_path is assumed as available ')
     parser.add_argument('--syn_path', default='./data/class_to_synset.json', help='Path to class name / synset mapping')

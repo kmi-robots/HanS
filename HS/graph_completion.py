@@ -1,4 +1,5 @@
-
+#TODO add mapping from classes extracted in quasimodo and target classes
+# e.g., fire door mapped to door
 
 def complete_graph(graph,property_dict):
 
