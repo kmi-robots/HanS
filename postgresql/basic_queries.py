@@ -5,7 +5,7 @@ insert_measurement = "INSERT INTO measurements(stamp, label, robot_position," \
                          "'{}', '{}', ST_MakePoint({}, {}, {}), ST_GeomFromEWKT('{}'), ST_GeometricMedian('{}'));"
 
 
-def retrieve_new_anchor_measurements(conn, cur):
+def retrieve_new_anchor_measurements(cur):
 
     akey_list = retrieve_anchors(cur)
     obj_anchors = {a_:{} for a_,_ in akey_list}
@@ -44,4 +44,9 @@ def retrieve_anchors(cur):
     cur.execute(q1)
     return [(r[0], r[1]) for r in cur.fetchall()]
 
-
+def mark_complete(conn, cur, akey_list):
+    for anchor_key in akey_list:
+        q = 'UPDATE anchors SET complete = TRUE ' \
+            'WHERE anchor_key=%s'
+        cur.execute(q, (anchor_key,))
+    conn.commit()
