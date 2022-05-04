@@ -22,7 +22,7 @@ def build_QSR_graph(conn, cur, anchors, args):
     QSRs = nx.MultiDiGraph()
     ids_ord = order_by_volume((conn,cur), list(anchors.keys()))
     QSRs.add_nodes_from(ids_ord.keys()) # one node per anchor
-    nx.set_node_attributes(QSRs, "", "DL_label")  # init field for DL prediction for later use
+    nx.set_node_attributes(QSRs, "", "obj_label")  # init field for DL prediction for later use
 
     for i, o_id in enumerate(ids_ord.keys()):
         figure_objs = find_neighbours(session, o_id, ids_ord, dis=args.dis)
@@ -73,13 +73,13 @@ def spatial_validate(node_id, DLrank, sizerank, QSRs, KB, taxonomy, meta='waterf
             pred_label = target_classes[cid]
             wn_syn = taxonomy[pred_label] #wordnet synsets associated with label
 
-            fig_qsrs = [(pred_label, QSRs.nodes[ref]["DL_label"], r['QSR'])
+            fig_qsrs = [(pred_label, QSRs.nodes[ref]["obj_label"], r['QSR'])
                         for f, ref, r in QSRs.out_edges(node_id, data=True) if ref not in ['wall', 'floor']
-                        and dlscores[dlclasses.index(class_map[QSRs.nodes[ref]["DL_label"]])] >= args_dict.dlconf]  # rels where obj is figure
-            ref_qsrs = [(QSRs.nodes[f]["DL_label"], pred_label, r['QSR'])
+                        and dlscores[dlclasses.index(class_map[QSRs.nodes[ref]["obj_label"]])] >= args_dict.dlconf]  # rels where obj is figure
+            ref_qsrs = [(QSRs.nodes[f]["obj_label"], pred_label, r['QSR'])
                         for f, ref, r in QSRs.in_edges(node_id, data=True) if
                         f not in ['wall', 'floor']
-                        and dlscores[dlclasses.index(class_map[QSRs.nodes[ref]["DL_label"]])] >= args_dict.dlconf]
+                        and dlscores[dlclasses.index(class_map[QSRs.nodes[ref]["obj_label"]])] >= args_dict.dlconf]
 
             # Retrieve wall and floor QSRs, only in figure/reference form - e.g., 'object onTopOf
             surface_qsrs = [(pred_label, ref, r['QSR']) for f, ref, r \

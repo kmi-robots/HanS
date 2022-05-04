@@ -43,13 +43,28 @@ def load_camera_intrinsics_txt(path_to_intr):
 
 def plot_graph(G):
     # G = nx.subgraph(G, ["0_radiator", "wall", "floor"]) #for debugging: look at node subset
-    pos = nx.spring_layout(G)
+    # Draw all nodes with their names first
+    pos = nx.spring_layout(G, k=4.*1/np.sqrt(len(G.nodes())), iterations=20)
     nx.draw(G, pos, connectionstyle='arc3, rad = 0.1', with_labels=True)
+
+    #Draw obj labels instead of node key, where found
+
+    labels = nx.get_node_attributes(G, 'obj_label')
+    labels = {k: v+'_'+str(k) for k, v in labels.items()} #distinguish objects of same class as different nodes
+
+    nx.draw_networkx_labels(G, pos=pos,labels=labels)
+
     edge_labels = nx.get_edge_attributes(G, 'QSR')
     # Uncomment below for debugging: look at only a subset of QSRs, e.g., leansOn, affixedON
     # edge_labels = {(u,v,i): d for (u,v,i), d in nx.get_edge_attributes(G, 'QSR').items() if d in ['leansOn','affixedOn']}
     draw_networkx_edge_labels(G, pos,
                               edge_labels=edge_labels)  # modified built-in method in nx below, because it needs unique keys, i.e., fails for multi-graph
+
+    #Repeat for non-QSR properties too
+    edge_labels = nx.get_edge_attributes(G, 'rel')
+    draw_networkx_edge_labels(G, pos,
+                              edge_labels=edge_labels)
+
     plt.draw()
     plt.show()
 

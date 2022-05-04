@@ -18,6 +18,11 @@ from KB.wordnet_linking import map_to_synsets
 from DL.ranking_aggregation import merge_scored_ranks
 from size_reasoner.size_reasoning import size_validate
 
+from HS.graph_completion import complete_graph
+from HS.HSrules import check_rules
+
+from utils import plot_graph
+
 def main():
 
     # Load parameters and maintain as dictionary
@@ -77,25 +82,44 @@ def main():
         #Aggregate DL rankings on same anchor
         aggr_DL_rank = merge_scored_ranks(attr['DL_predictions'])
 
-        # TODO select which anchors in anchor_dict need correction (based on aggr confidence)
         # annotate qsr graph with top1 DL pred
         topclass = target_classes[aggr_DL_rank[0][0]]
-        qsr_graph.nodes[a_id]["DL_label"] = topclass
-        aggr_ranks.append((a_id, aggr_DL_rank))
+        qsr_graph.nodes[a_id]["obj_label"] = topclass
 
-    print("Reasoning on object anchors")
-    for a_id, aggr_DL_rank in aggr_ranks: #TODO only loop through those that need correction
-        # Validate merged ranking based on size KB
-        sizev_rank = size_validate(aggr_DL_rank, cursor, a_id, sizeKB)
-        # Validate ranking based on spatial KB
-        spatial_outrank = spatial_validate(a_id, aggr_DL_rank,sizev_rank, qsr_graph, spatialKB, target_synsets, meta=args_dict.meta)
-        read_input = [(target_classes[cid], score) for cid, score in spatial_outrank]
-        print("Ranking post meta-reasoning")
+        # Select which anchors in anchor_dict need correction (based on aggr confidence)
+        topscore = aggr_DL_rank[0][1]
+        if topscore < args_dict.dlconf: tbcorr = True
+        else: tbcorr = False
+        aggr_ranks.append((a_id, aggr_DL_rank, tbcorr))
+
+    for a_id, aggr_DL_rank, corr_flag in aggr_ranks: #Only apply reasoning to those predictions that need correction
+        if corr_flag:
+            topclassDL = target_classes[aggr_DL_rank[0][0]]
+            print("Reasoning on object anchors")
+            # Validate merged ranking based on size KB
+            sizev_rank = size_validate(aggr_DL_rank, cursor, a_id, sizeKB)
+            # Validate ranking based on spatial KB
+            spatial_outrank = spatial_validate(a_id, aggr_DL_rank,sizev_rank, qsr_graph, spatialKB, target_synsets, meta=args_dict.meta)
+            read_input = [(target_classes[cid], score) for cid, score in spatial_outrank]
+            print("Ranking post meta-reasoning")
+
+            #if top class has changed also change label in scene graph
+            # annotate qsr graph with top1 DL pred
+            topclassmod = read_input[0][0]
+            if topclassmod != topclassDL:
+                qsr_graph.nodes[a_id]["obj_label"] = topclassmod
+
+        else:
+            print("DL confident enough, keeping original ranking")
+            read_input = [(target_classes[cid], score) for cid, score in aggr_DL_rank]
         print(read_input)
 
-    # TODO scene assessment part
+    # Scene assessment part
     # expand QSR graph based on Quasimodo concepts ./data/commonsense_extracted.json
-    # check rules
+    # plot_graph(qsr_graph)
+    mod_graph = complete_graph(qsr_graph,quasiKB)
+    # plot_graph(mod_graph)
+    # TODO check rules
     # once done with reasoning, mark all object anchors as complete
     disconnect_DB(connection,cursor) #close database connection
     # evaluate results

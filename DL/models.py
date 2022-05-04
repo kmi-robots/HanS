@@ -29,6 +29,7 @@ from pycoral.adapters import common
 import cv2
 import numpy as np
 import collections
+import random
 
 DetectionWithMask = collections.namedtuple('DetectionWithMask',
                                            ['pred_ranking',
@@ -130,10 +131,17 @@ class ObjRecEngine:
 
         for o_ in res_list:
             bbox_ = [int(o_.bbox.xmin), int(o_.bbox.ymin), int(o_.bbox.xmax), int(o_.bbox.ymax)]
+            clone = cvimg.copy()
+            roi = clone[bbox_[1]:bbox_[3],bbox_[0]:bbox_[2]]
             cvimg = cv2.rectangle(cvimg, tuple(bbox_[:2]), tuple(bbox_[2:4]), self.color, self.thickness)
-            topclass = o_.pred_ranking[0][0]
+
+            roi = roi[o_.mask]
+            blended = ((0.4 * np.array(self.color)) + (0.6 * roi)).astype("uint8")
+            cvimg[bbox_[1]:bbox_[3],bbox_[0]:bbox_[2]][o_.mask] = blended
+
+            topclass = self.labels[o_.pred_ranking[0][0]]
             conf_score = o_.pred_ranking[0][1]
-            cv2.putText(cvimg, str(topclass) + '\t' + str(conf_score), (bbox_[0], bbox_[1] - 10),
+            cv2.putText(cvimg, str(topclass) + '  ' + str(conf_score), (bbox_[0], bbox_[1] - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.9, color=self.color, thickness=self.thickness)
 
         return cvimg

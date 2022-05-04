@@ -83,6 +83,10 @@ class ObjectRecognition(Node):
         det_results = self.obj_engine.detect_objects(cv2_im_rgb_big)
         cv2_labeled_img = self.obj_engine.visualize_bboxes(cv2_im_rgb_big, det_results)
 
+        # cv2.imshow('show', cv2_labeled_img)
+        # cv2.waitKey(5000)
+        # cv2.destroyAllWindows()
+
         rgb_msg = self.bridge.cv2_to_imgmsg(cv2_labeled_img, encoding='bgr8')
         self.pub_rgb.publish(rgb_msg)
 
