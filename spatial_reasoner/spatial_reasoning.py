@@ -23,8 +23,10 @@ def build_QSR_graph(conn, cur, anchors, args):
     ids_ord = order_by_volume((conn,cur), list(anchors.keys()))
     QSRs.add_nodes_from(ids_ord.keys()) # one node per anchor
     nx.set_node_attributes(QSRs, "", "obj_label")  # init field for DL prediction for later use
+    nx.set_node_attributes(QSRs, 0, "obj_volume")  # init field for DL prediction for later use
 
-    for i, o_id in enumerate(ids_ord.keys()):
+    for i, (o_id, o_volume) in enumerate(ids_ord.items()):
+        QSRs.nodes[o_id]["obj_volume"] = o_volume # keep track of obj volume in graph, used later for rule check
         figure_objs = find_neighbours(session, o_id, ids_ord, dis=args.dis)
         if len(figure_objs) > 0:
             QSRs = extract_QSR(session, o_id, figure_objs, QSRs, int_perc=args.int_perc)  # relations between objects

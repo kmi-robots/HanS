@@ -66,6 +66,11 @@ def main():
             quasiKB = json.load(fp)
             print("Loaded relevant quasimodo facts from local")
 
+    #Loading H&S rules
+    with open(args_dict.rules_src) as fp:  # load pre-extracted from local
+        rule_dict = json.load(fp)
+        print("Loaded set of H&S rules from local")
+
     # retrieve new object anchors to be examined and all DL predictions related to each anchor
     #i.e., either a newly added anchor or a former anchor for which a new measurement was recorded
     anchor_dict = retrieve_new_anchor_measurements(cursor)
@@ -78,6 +83,7 @@ def main():
 
     print("Aggregating DL predictions across observations")
     aggr_ranks = []
+    node_mapping={}
     for a_id, attr in anchor_dict.items():
         #Aggregate DL rankings on same anchor
         aggr_DL_rank = merge_scored_ranks(attr['DL_predictions'])
@@ -113,14 +119,20 @@ def main():
             print("DL confident enough, keeping original ranking")
             read_input = [(target_classes[cid], score) for cid, score in aggr_DL_rank]
         print(read_input)
+        final_pred = qsr_graph.nodes[a_id]["obj_label"]
+        if not final_pred in node_mapping.keys():
+            node_mapping[final_pred]=[]
+        node_mapping[final_pred].append(a_id) # keep track of which anchors belong to a certain class, used later for rule checking
 
     # Scene assessment part
     # expand QSR graph based on Quasimodo concepts ./data/commonsense_extracted.json
     # plot_graph(qsr_graph)
     mod_graph = complete_graph(qsr_graph,quasiKB)
     # plot_graph(mod_graph)
-    check_rules(mod_graph)
-    # TODO check rules
+    #relabel graph with object names
+    # check rules
+    check_rules(mod_graph, rule_dict, node_mapping)
+
     # once done with reasoning, mark all object anchors as complete
     mark_complete(connection, cursor, list(anchor_dict.keys()))
     disconnect_DB(connection,cursor) #close database connection

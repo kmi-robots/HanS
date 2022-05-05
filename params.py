@@ -84,6 +84,7 @@ def get_parser():
     parser.add_argument('--quasi_src', default='./data/quasimodo43.tsv', help='Path to source quasimodo data')
     parser.add_argument('--quasi_t', default=0.64, help='Threshold for filtering facts by confidence')
     parser.add_argument('--material_src', default='./data/shapenet_materials.csv', help='Path to source material data')
+    parser.add_argument('--rules_src', default='./HS/rules.json', help='Path to rules to be checked during scene assessment')
 
     #Wordnet terms
     parser.add_argument('--extract_synsets', type=str2bool, nargs='?', default=False,
