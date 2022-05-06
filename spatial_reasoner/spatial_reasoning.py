@@ -4,7 +4,6 @@ import networkx as nx
 from utils import plot_graph
 import itertools
 import statistics
-from collections import Counter
 
 from params import get_parser
 from pycoral.utils.dataset import read_label_file
@@ -26,6 +25,8 @@ def build_QSR_graph(conn, cur, anchors, args):
     nx.set_node_attributes(QSRs, 0, "obj_volume")  # init field for DL prediction for later use
 
     for i, (o_id, o_volume) in enumerate(ids_ord.items()):
+
+        #TODO add relations with map areas, e.g., wast area, fire escape area
         QSRs.nodes[o_id]["obj_volume"] = o_volume # keep track of obj volume in graph, used later for rule check
         figure_objs = find_neighbours(session, o_id, ids_ord, dis=args.dis)
         if len(figure_objs) > 0:

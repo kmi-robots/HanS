@@ -1,82 +1,83 @@
 {
 
   "fire_extinguisher_safety_1": {
-    "node1": "fire_extinguisher",
+    "node1": "object:fire_extinguisher",
     "description": "Are portable fire extinguishers either securely wall mounted or on a supplied stand?",
     "rule": {
             "or": [
                     {"edge":  "affixedOn",
-                    "node2":  "wall",
+                    "node2":  "object:wall",
                     "negation":  false},
                     {"edge":  "leansOn",
-                    "node2":  "stand",
+                    "node2":  "object:stand",
                     "negation":  false}]
             }
 
   },
 
   "fire_extinguisher_safety_2": {
-    "node1": "fire_extinguisher",
+    "node1": "object:fire_extinguisher",
     "description": "Are all portable fire extinguishers readily accessible and not restricted by stored items?",
     "rule": {"edge": "behind",
-              "node2": "any",
+              "node2": "object:any",
               "negation": true
             }
 
   },
 
   "fire_extinguisher_safety_3": {
-    "node1": "fire_extinguisher",
+    "node1": "object:fire_extinguisher",
     "description": "Are portable fire extinguishers clearly labelled?",
-    "rule": {"edge": "fire_extinguisher_sign",
-              "node2": "any",
+    "rule": {"edge": "QSR",
+              "node2": "object:fire_extinguisher_sign",
               "negation": false
             }
 
   },
 
   "plug_safety_1": {
-    "node1": "power_socket",
+    "node1": "object:power_socket",
     "description": "Are sockets not overloaded by use of multiplugs?",
     "rule": {"edge": "QSR",
-              "node2": "power_cord",
-              "negation": true,
+              "node2": "object:power_cord",
+              "negation": false,
               "maxno": 2
             }
 
   },
 
   "waste_check_1": {
-    "node1": "rubbish_bin",
+    "node1": "object:rubbish_bin",
     "description": "Is waste and rubbish kept in a designated area and collected regularly?",
-    "rule": {"edge": "complCont",
-              "node2": "waste_area",
+    "rule": {"edge": "QSR",
+              "node2": "area:waste_area",
               "negation": false
             }
 
   },
 
   "fire_hazard_check_1": {
-    "node1": "flammable",
+    "node1": "property:flammable",
     "description": "Have combustible materials been stored away from sources of ignition? ",
     "rule": {
-      "edge": "any",
-      "node2": "ignition",
-      "negation": true
-    }
+            "edge":  "touches",
+            "node2": "property:ignition",
+            "negation": true
+
+            }
   },
 
   "fire_point_check_1": {
-    "node1": "fire_call_point",
+    "node1": "area:fire_call_area",
     "description": "Are all fire alarm call points clearly signed and easily accessible?",
     "rule": {
       "and": [
             {"edge":  "QSR",
-              "node2":  "fire_alarm_assembly_sign",
+              "node2":  "object:fire_alarm_assembly_sign",
               "negation":  false},
             {"edge":  "QSR",
               "node2":  "any",
-              "except": "fire_alarm_assembly_sign",
+              "except": "object:fire_alarm_assembly_sign",
               "negation":  true}
             ]
 
@@ -85,49 +86,49 @@
   },
 
   "fire_escape_area_check_1": {
-    "node1": "fire_escape_area",
+    "node1": "area:fire_escape_area",
     "description": "Are fire escape routes kept clear?",
     "rule": {
               "edge":  "QSR",
               "node2":  "any",
-              "except": "emergency_exit_sign",
+              "except": "object:emergency_exit_sign",
               "negation":  true}
     },
 
     "fire_escape_area_check_2": {
-    "node1": "fire_escape_area",
+    "node1": "area:fire_escape_area",
     "description": "Are all fire exit signs in place?",
     "rule": {
               "edge":  "QSR",
-              "node2":  "emergency_exit_sign",
+              "node2":  "object:emergency_exit_sign",
               "negation":  false}
     },
 
     "fire_escape_area_check_3": {
-    "node1": "emergency_exit_sign",
+    "node1": "object:emergency_exit_sign",
     "description": "Are all fire exit signs unobstructed?",
     "rule": {
               "edge":  "behind",
               "node2":  "any",
-              "except": "fire_escape_area",
+              "except": "area:fire_escape_area",
               "negation":  true}
     },
 
     "fire_door_check_1": {
-    "node1": "door",
+    "node1": "object:door",
     "description": "Are fire doors not wedged open, or kept closed?",
     "rule": {
               "edge":  "touches",
-              "node2":  "any",
+              "node2":  "object:any",
               "negation":  true}
     },
 
   "trip_hazard_check_1": {
-    "node1": "floor",
+    "node1": "area:floor",
     "description": "Is the condition of all flooring free from trip hazards?",
     "rule": {
               "edge":  "touches",
-              "node2":  "any",
+              "node2":  "object:any",
               "is_small": true,
               "negation":  true}
     }
