@@ -15,7 +15,9 @@ def is_there_an_edge(scene_graph, node1, node2, nmap, edge_type=None, except_nod
     """
     logic_res = False
 
-    neighbour_nodes =[nb for nb in scene_graph.neighbors(node1)]
+    neighbour_nodes =[nb for nb in scene_graph.neighbors(node1)] #neighbours are only out edges from node 1
+    neighbour_nodes.extend([n_ for n_,_ in scene_graph.in_edges(node1)])
+
     if node2 == 'any':
         tgt_neighbour_nodes = [nb for nb in neighbour_nodes if nb != except_node]# any object except value of except_node counts
     else:
@@ -26,6 +28,8 @@ def is_there_an_edge(scene_graph, node1, node2, nmap, edge_type=None, except_nod
 
     for tnn in tgt_neighbour_nodes:
         edge_data = scene_graph.get_edge_data(node1, tnn) # returns None if there is no edge
+        if edge_data is None:
+            edge_data = scene_graph.get_edge_data(tnn, node1) #try swapping the two (directed graph)
         if edge_data is not None:
             for vdict in edge_data.values():  # e.g. vdict = {'QSR': 'affixedOn'}
                 vit = list(vdict.items())[0]

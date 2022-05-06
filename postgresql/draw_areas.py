@@ -83,7 +83,7 @@ def main():
     # Load parameters and maintain as dictionary
     parser = get_parser()
     args_dict, unknown = parser.parse_known_args()
-    area_type = "fire_escape_area" #"fire_call_point" #type_of_area_annotated
+    area_type = "fire_escape_area" #"fire_escape_area" #"fire_call_point" #"waste_area" #type_of_area_annotated
 
     wg = AreaGUI(args_dict, area_type)
     wg.run()

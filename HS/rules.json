@@ -76,7 +76,7 @@
               "node2":  "object:fire_alarm_assembly_sign",
               "negation":  false},
             {"edge":  "QSR",
-              "node2":  "any",
+              "node2":  "object:any",
               "except": "object:fire_alarm_assembly_sign",
               "negation":  true}
             ]
@@ -90,7 +90,7 @@
     "description": "Are fire escape routes kept clear?",
     "rule": {
               "edge":  "QSR",
-              "node2":  "any",
+              "node2":  "object:any",
               "except": "object:emergency_exit_sign",
               "negation":  true}
     },
@@ -109,7 +109,7 @@
     "description": "Are all fire exit signs unobstructed?",
     "rule": {
               "edge":  "behind",
-              "node2":  "any",
+              "node2":  "object:any",
               "except": "area:fire_escape_area",
               "negation":  true}
     },

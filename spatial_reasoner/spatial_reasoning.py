@@ -19,19 +19,13 @@ def build_QSR_graph(conn, cur, anchors, args):
 
     session = (conn,cur)
     QSRs = nx.MultiDiGraph()
+
     ids_ord = order_by_volume((conn,cur), list(anchors.keys()))
     QSRs.add_nodes_from(ids_ord.keys()) # one node per anchor
     nx.set_node_attributes(QSRs, "", "obj_label")  # init field for DL prediction for later use
     nx.set_node_attributes(QSRs, 0, "obj_volume")  # init field for DL prediction for later use
 
-    for i, (o_id, o_volume) in enumerate(ids_ord.items()):
-
-        #TODO add relations with map areas, e.g., wast area, fire escape area
-        # for fire escape areas: check containment
-        # Areas are 2D polygons so we can use ST_Contain between anchor centroid and areas,
-        # this operator will automatically project the 3D centroid on the 2D area to perform the containment check
-        # for fire call points:
-        # if distance between obj centroid and point less than threshold say they touch
+    for (o_id, o_volume) in ids_ord.items():
 
         QSRs.nodes[o_id]["obj_volume"] = o_volume # keep track of obj volume in graph, used later for rule check
         figure_objs = find_neighbours(session, o_id, ids_ord, dis=args.dis)
@@ -41,16 +35,24 @@ def build_QSR_graph(conn, cur, anchors, args):
 
         #Changed to extract_surface_QSR (no precalc) + new walls
         QSRs = extract_surface_QSR(session, o_id, QSRs, fht=args.fht, wht=args.wht)  # relations with walls and floor
+
     # after all reference objects have been examined
     # derive special cases of ON
     QSRs = infer_special_ON(QSRs)
 
+    # add relations with map areas, e.g., wast area, fire escape area
+    # Note: added at the end so containment in abstract regions do not interfere with physical checks
+    areas_of_interest = retrieve_AOI((conn, cur))
+    for o_id in ids_ord.keys():
+        QSRs = extract_specialarea_QSR(session, o_id, areas_of_interest, QSRs)
+
     # QSRs = remove_redundant_qsrs(QSRs) # used to evaluate the QSR to make sure they were not duplicated but for VG best to keep synonyms e.g., both LeftOf and beside
 
     #to visualize extracted QSR graph
-    # plot_graph(QSRs)
+    #plot_graph(QSRs)
 
     return QSRs
+
 
 def spatial_validate(node_id, DLrank, sizerank, QSRs, KB, taxonomy, meta='waterfall'):
 
@@ -426,6 +428,57 @@ def extract_surface_QSR(session, obj_id, qsr_graph, fht=0.15, wht=0.259):#fht=0.
     if ws <= wht:
         qsr_graph.add_edge(obj_id, 'wall', QSR='touches')
         #qsr_graph.add_edge('wall', obj_id, QSR='touches') #also add relation in opposite direction
+    return qsr_graph
+
+def retrieve_AOI(session):
+
+    tmp_conn, tmp_cur = session
+    tmp_cur.execute("""SELECT areakey, area_type
+                            FROM sw_areas as ar""")
+
+    return [(r[0], r[1]) for r in tmp_cur.fetchall()]
+
+def extract_specialarea_QSR(session, obj_id, aoi_list, qsr_graph, dthresh=10.):
+
+    """
+    Add to the graph the relations between object anchors and Areas of Interest
+    (i.e., fire escape routes, designated waste areas, and fire call points)
+    dthresh is the distance threshold to consider the proximity to a fire call point, in meters
+    """
+
+    tmp_conn, tmp_cur = session
+
+    for area_key, area_type in aoi_list: #for each area of interest
+
+        if area_type in ['fire_escape_area', 'waste_area']:
+            # for fire escape areas and waste_areas: check containment
+            # Areas are 2D polygons so we can use ST_Contain between anchor centroid and areas,
+            # this operator will automatically project the 3D centroid on the 2D area to perform the containment check
+
+            tmp_cur.execute("""SELECT ST_Contains(ar.area, a.location_3d)
+                                       FROM anchors as a, sw_areas as ar
+                                       WHERE a.anchor_key = %s
+                                       and ar.areakey =%s
+                                        """, (obj_id,area_key))
+
+            is_in = tmp_cur.fetchone()[0]
+            if is_in: #centroid of object within area of interest
+                qsr_graph.add_edge(obj_id, area_type, QSR='in')
+
+        else:
+
+            # for fire call points:
+            # if distance between obj centroid and point less than threshold say they touch
+            tmp_cur.execute("""SELECT ST_DWithin(ar.area, a.location_3d, %s)
+                                                   FROM anchors as a, sw_areas as ar
+                                                   WHERE a.anchor_key = %s
+                                                   and ar.areakey =%s
+                                                    """, (dthresh,obj_id, area_key))
+
+            is_within = tmp_cur.fetchone()[0]
+            if is_within:  # centroid of object within area of interest
+                qsr_graph.add_edge(obj_id, area_type, QSR='touches')
+
     return qsr_graph
 
 def infer_special_ON(local_graph):
