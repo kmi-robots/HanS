@@ -27,6 +27,12 @@ def build_QSR_graph(conn, cur, anchors, args):
     for i, (o_id, o_volume) in enumerate(ids_ord.items()):
 
         #TODO add relations with map areas, e.g., wast area, fire escape area
+        # for fire escape areas: check containment
+        # Areas are 2D polygons so we can use ST_Contain between anchor centroid and areas,
+        # this operator will automatically project the 3D centroid on the 2D area to perform the containment check
+        # for fire call points:
+        # if distance between obj centroid and point less than threshold say they touch
+
         QSRs.nodes[o_id]["obj_volume"] = o_volume # keep track of obj volume in graph, used later for rule check
         figure_objs = find_neighbours(session, o_id, ids_ord, dis=args.dis)
         if len(figure_objs) > 0:

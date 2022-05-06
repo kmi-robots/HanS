@@ -48,3 +48,9 @@ CREATE TABLE IF NOT EXISTS vg_rels(
 CREATE TABLE IF NOT EXISTS sw_walls(
         id serial PRIMARY KEY,
         surface geometry NOT NULL);
+
+CREATE TABLE IF NOT EXISTS sw_areas(
+    areakey serial PRIMARY KEY,
+    area geometry,
+    stamp timestamp,
+    area_type varchar);

@@ -68,7 +68,7 @@
   },
 
   "fire_point_check_1": {
-    "node1": "area:fire_call_area",
+    "node1": "area:fire_call_point",
     "description": "Are all fire alarm call points clearly signed and easily accessible?",
     "rule": {
       "and": [

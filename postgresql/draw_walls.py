@@ -1,4 +1,5 @@
 """ Code for manual wall annotation given a map
+click between two points so that a wall edge is drawn
 """
 
 import yaml
