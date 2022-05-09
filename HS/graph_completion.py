@@ -1,5 +1,17 @@
-#TODO add mapping from classes extracted in quasimodo and target classes
-# e.g., fire door mapped to door
+"""
+Completing a scene graph with commonsense knowledge retrieved externally
+"""
+
+taxonomy_to_quasi={
+
+    "fire door": "door",
+    "fire extinguisher sign":"safety sign",
+    "fire alarm assembly sign":"safety sign",
+    "emergency exit sign":"safety sign",
+    "power_cord": "plug",
+    "rubbish bin": "trash can"
+}
+
 
 def complete_graph(graph,property_dict):
 
@@ -11,6 +23,12 @@ def complete_graph(graph,property_dict):
                        # only objects are enriched with commonsense properties
 
         cname = cname.replace('_', ' ')
+        if cname not in property_dict.keys() and cname in taxonomy_to_quasi.keys():
+            # find equivalent keyword used in quasimodo
+            cname = taxonomy_to_quasi[cname]
+        else:
+            continue # unknown object class based on current KB
+
         commonsense_rels = property_dict[cname]
 
         for rel_, vs in commonsense_rels.items():

@@ -438,7 +438,7 @@ def retrieve_AOI(session):
 
     return [(r[0], r[1]) for r in tmp_cur.fetchall()]
 
-def extract_specialarea_QSR(session, obj_id, aoi_list, qsr_graph, dthresh=10.):
+def extract_specialarea_QSR(session, obj_id, aoi_list, qsr_graph, dthresh=0.5):
 
     """
     Add to the graph the relations between object anchors and Areas of Interest

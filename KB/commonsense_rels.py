@@ -6,7 +6,7 @@ import json
 from utils import get_csv_data
 
 tgt_objects = ['book', 'fire door','safety sign', 'fire extinguisher', 'chair', 'trash can', 'kettle',
-               'electric heater', 'desk', 'electric cable', 'power socket', 'plug', 'person', 'radiator']
+               'electric heater', 'desk', 'power socket', 'plug', 'person', 'radiator']
 
 tgt_objects_single = [s.split(' ') for s in tgt_objects]
 
