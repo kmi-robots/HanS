@@ -137,7 +137,6 @@ def main():
     mark_complete(connection, cursor, list(anchor_dict.keys()))
     disconnect_DB(connection,cursor) #close database connection
     # evaluate results
-    pass
 
 
 if __name__ == "__main__":

@@ -2,8 +2,7 @@
 Completing a scene graph with commonsense knowledge retrieved externally
 """
 
-taxonomy_to_quasi={
-
+taxonomy_to_quasi = {
     "fire door": "door",
     "fire extinguisher sign":"safety sign",
     "fire alarm assembly sign":"safety sign",
@@ -11,7 +10,6 @@ taxonomy_to_quasi={
     "power_cord": "plug",
     "rubbish bin": "trash can"
 }
-
 
 def complete_graph(graph,property_dict):
 

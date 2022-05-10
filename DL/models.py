@@ -71,6 +71,21 @@ class ObjRecEngine:
         height, width, channels = rgb_img.shape
         scalex, scaley = width / self.input_size[0], height / self.input_size[1]
 
+        """Apply saliency detection to focus only on subportions of the image"""
+
+        saliency = cv2.saliency.StaticSaliencyFineGrained_create()
+        (success, saliencyMap) = saliency.computeSaliency(rgb_img)
+        saliencyMapforbin = (saliencyMap * 255).astype("uint8")
+
+        threshMap = cv2.threshold(saliencyMapforbin, 0, 255,
+                                  cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+
+        rgb_img = cv2.bitwise_and(rgb_img, rgb_img, mask=threshMap)
+
+        """cv2.imshow("Thresh", rgb_img)
+        cv2.waitKey(5000)
+        cv2.destroyAllWindows()"""
+
         if self.segm_model is None:
             resized_img = cv2.resize(rgb_img, self.input_size)
             run_inference(self.interpreter, resized_img.tobytes())

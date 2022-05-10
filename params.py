@@ -18,7 +18,7 @@ def get_parser():
     parser.add_argument('--segm_config', default='./data/mask_rcnn_inception_v2_coco_2018_01_28.pbtxt', help='Path to segmentation model for OpenCV')
     parser.add_argument('--segm_size', default=(300, 300), help='Value to resize input images for bbox detection')
     parser.add_argument('--segm_mean', default=(104, 117, 123), help='Mean values to normalise input images for bbox detection')
-    parser.add_argument('--conft', default=0.05, help='Confidence threshold for detected bounding boxes')
+    parser.add_argument('--conft', default=0.2, help='Confidence threshold for detected bounding boxes')
 
     # ROS & Robot-specific params
     parser.add_argument('--rgb_topic', default='/camera/rgb/image_rect_color', help='RGB camera topic name')
