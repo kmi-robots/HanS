@@ -69,7 +69,10 @@ def is_there_property_edge(scene_graph, propkey, maxhops=3):
 def is_small(graph, obj_node, volume_thresh=0.002):
     # volume threshold in cube meters, e.g., defaults to 2 litres
     # if object is small and on floor then trip hazard
-    return graph[obj_node]["obj_volume"] <= volume_thresh
+    if "obj_volume" not in graph[obj_node].keys():
+        return False #larger surface
+    else:
+        return graph[obj_node]["obj_volume"] <= volume_thresh
 
 def call_rule_check(G, node1prefix, node1, rule_body, nodemapping):
 

@@ -126,9 +126,9 @@ def main():
 
     # Scene assessment part
     # expand QSR graph based on Quasimodo concepts ./data/commonsense_extracted.json
-    # plot_graph(qsr_graph)
+    plot_graph(qsr_graph)
     mod_graph = complete_graph(qsr_graph,quasiKB)
-    # plot_graph(mod_graph)
+    plot_graph(mod_graph)
     #relabel graph with object names
     # check rules
     check_rules(mod_graph, rule_dict, node_mapping)

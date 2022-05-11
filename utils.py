@@ -56,7 +56,7 @@ def plot_graph(G):
 
     edge_labels = nx.get_edge_attributes(G, 'QSR')
     # Uncomment below for debugging: look at only a subset of QSRs, e.g., leansOn, affixedON
-    # edge_labels = {(u,v,i): d for (u,v,i), d in nx.get_edge_attributes(G, 'QSR').items() if d in ['leansOn','affixedOn']}
+    edge_labels = {(u,v,i): d for (u,v,i), d in nx.get_edge_attributes(G, 'QSR').items() if d !='below'}
     draw_networkx_edge_labels(G, pos,
                               edge_labels=edge_labels)  # modified built-in method in nx below, because it needs unique keys, i.e., fails for multi-graph
 

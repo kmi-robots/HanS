@@ -24,13 +24,17 @@ def complete_graph(graph,property_dict):
         if cname not in property_dict.keys() and cname in taxonomy_to_quasi.keys():
             # find equivalent keyword used in quasimodo
             cname = taxonomy_to_quasi[cname]
-        else:
+        elif cname not in property_dict.keys() and cname not in taxonomy_to_quasi.keys():
             continue # unknown object class based on current KB
 
         commonsense_rels = property_dict[cname]
-
         for rel_, vs in commonsense_rels.items():
             for prop, KBscore in vs:
+
+                if isinstance(KBscore, str):
+                    #convert material percentages from str to float
+                    KBscore = float(KBscore[:-1])
+
                 if not Gmod.has_node(prop):
                     Gmod.add_node(prop)
                 Gmod.add_edge(nodeid, prop, rel=rel_, weight=KBscore)

@@ -73,20 +73,21 @@ class ObjRecEngine:
 
         """Apply saliency detection to focus only on subportions of the image"""
 
-        saliency = cv2.saliency.StaticSaliencyFineGrained_create()
+        """saliency = cv2.saliency.StaticSaliencyFineGrained_create()
         (success, saliencyMap) = saliency.computeSaliency(rgb_img)
         saliencyMapforbin = (saliencyMap * 255).astype("uint8")
 
         threshMap = cv2.threshold(saliencyMapforbin, 0, 255,
                                   cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
 
-        rgb_img = cv2.bitwise_and(rgb_img, rgb_img, mask=threshMap)
-
+        rgb_img_masked = cv2.bitwise_and(rgb_img, rgb_img, mask=threshMap)
+        """
         """cv2.imshow("Thresh", rgb_img)
         cv2.waitKey(5000)
         cv2.destroyAllWindows()"""
 
-        if self.segm_model is None:
+
+        if self.segm_model is None: #detection+classification done together on TPU, e.g., ssd or yolo-like model
             resized_img = cv2.resize(rgb_img, self.input_size)
             run_inference(self.interpreter, resized_img.tobytes())
             # obj_list = get_objects(self.interpreter, score_threshold=self.threshold)
@@ -97,6 +98,10 @@ class ObjRecEngine:
                 bbox=obj_.bbox.scale(scalex, scaley)) for obj_ in obj_list_pre]
 
         else:
+
+            # masked image after saliency used for segmentation, but bounding box cropped on original image pre saliency
+            # (we found it tends to perform better for bbox classification accuracy)
+
             # Detect bboxes with openCV first then classify single boxes with imprinted classifier
             blob = cv2.dnn.blobFromImage(image=rgb_img, crop=False)
             self.segm_model.setInput(blob)
