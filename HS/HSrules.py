@@ -49,7 +49,12 @@ def is_there_property_edge(scene_graph, propkey, maxhops=3):
 
     for nid in scene_graph.nodes():
         if nid not in matching_nodes:# skip visited nodes from next loop
-            path = nx.shortest_path(Gu, source=nid, target=propkey) #e.g., shortest path between book and flammable
+            try:
+                path = nx.shortest_path(Gu, source=nid, target=propkey) #e.g., shortest path between book and flammable
+            except Exception as e:
+                print(str(e))
+                break # one of the target properties not in graph
+
             if len(path)>0 and len(path)<=maxhops+1: #maximum number of hops allowed to consider a path valid
                 #if path is found
                 hasqsr = False

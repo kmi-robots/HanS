@@ -85,11 +85,10 @@ def spatial_validate(node_id, DLrank, sizerank, QSRs, KB, taxonomy, meta='waterf
             wn_syn = taxonomy[pred_label] #wordnet synsets associated with label
 
             fig_qsrs = [(pred_label, QSRs.nodes[ref]["obj_label"], r['QSR'])
-                        for f, ref, r in QSRs.out_edges(node_id, data=True) if ref not in ['wall', 'floor']
+                        for f, ref, r in QSRs.out_edges(node_id, data=True) if ref in class_map.keys()
                         and dlscores[dlclasses.index(class_map[QSRs.nodes[ref]["obj_label"]])] >= args_dict.dlconf]  # rels where obj is figure
             ref_qsrs = [(QSRs.nodes[f]["obj_label"], pred_label, r['QSR'])
-                        for f, ref, r in QSRs.in_edges(node_id, data=True) if
-                        f not in ['wall', 'floor']
+                        for f, ref, r in QSRs.in_edges(node_id, data=True) if f in class_map.keys()
                         and dlscores[dlclasses.index(class_map[QSRs.nodes[ref]["obj_label"]])] >= args_dict.dlconf]
 
             # Retrieve wall and floor QSRs, only in figure/reference form - e.g., 'object onTopOf
@@ -109,8 +108,9 @@ def spatial_validate(node_id, DLrank, sizerank, QSRs, KB, taxonomy, meta='waterf
             spatial_scores = modify_with_typicalities(wn_syn, ref_qsrs, taxonomy, KB, relform='reference', all_spatial_scores=spatial_scores)
 
             # Average across all QSRs
-            avg_spatial_score = statistics.mean(spatial_scores)
-            spacescores[i] += avg_spatial_score # add up to ML score
+            if len(spatial_scores)>0:
+                avg_spatial_score = statistics.mean(spatial_scores)
+                spacescores[i] += avg_spatial_score # add up to ML score
 
         # Normalise combined scores cross-class so they are between 0 and 1
         min_, max_ = min(spacescores), max(spacescores)

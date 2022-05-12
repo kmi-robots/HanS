@@ -120,6 +120,7 @@
     "rule": {
               "edge":  "touches",
               "node2":  "object:any",
+              "except": "object:floor",
               "negation":  true}
     },
 
