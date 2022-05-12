@@ -374,9 +374,11 @@ def extract_QSR(session, ref_id, figure_objs, qsr_graph, int_perc=0.05):
                             ' AND fig.anchor_key = %s', (ref_id, figure_id))
             res = tmp_cur.fetchone()
             figvol = res[2]
-            if res[0] >figvol*int_perc: qsr_graph.add_edge(figure_id, ref_id, QSR='inFrontOf')
+            if res[0] >figvol*int_perc:
+                qsr_graph.add_edge(figure_id, ref_id, QSR='inFrontOf')
 
-            if res[1] >figvol*int_perc: qsr_graph.add_edge(figure_id, ref_id, QSR='behind')
+            if res[1] >figvol*int_perc:
+                qsr_graph.add_edge(figure_id, ref_id, QSR='behind')
 
         except:
             print("Problem")

@@ -18,9 +18,14 @@
   "fire_extinguisher_safety_2": {
     "node1": "object:fire_extinguisher",
     "description": "Are all portable fire extinguishers readily accessible and not restricted by stored items?",
-    "rule": {"edge": "behind",
-              "node2": "object:any",
-              "negation": true
+    "rule": {
+              "and": [
+                    {"edge":  "inFrontOf",
+                    "node2":  "object:any",
+                    "negation":  true},
+                    {"edge":  "behind",
+                    "node2":  "object:any",
+                    "negation":  true}]
             }
 
   },

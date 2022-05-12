@@ -4,6 +4,7 @@ can be read live from the robot sensors or from bag played in the background
 """
 
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import Image, PointCloud2
 import message_filters
 
@@ -40,7 +41,13 @@ class ObjectRecognition(Node):
         self.id_prefix = datetime.today().strftime('%Y%m%d%H%M')
         self.id_counter = 0
 
-        self.rgb_sub = message_filters.Subscriber(self, Image, cliargs.rgb_topic)
+        qos_policy = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
+                                          history=HistoryPolicy.KEEP_LAST,
+                                          depth=1)
+
+
+        #self.rgb_sub = self.create_subscription(Image, cliargs.rgb_topic, self.callback, qos_profile=qos_policy)
+        self.rgb_sub = message_filters.Subscriber(self, Image, cliargs.rgb_topic, qos_profile=qos_policy)
         self.pcl_sub = message_filters.Subscriber(self, PointCloud2, cliargs.pcl_topic)
         self.pub_rgb = self.create_publisher(Image, cliargs.rgb_topic + '/bboxes', 10)
 

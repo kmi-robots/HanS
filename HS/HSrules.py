@@ -36,7 +36,8 @@ def is_there_an_edge(scene_graph, node1, node2, nmap, edge_type=None, except_nod
                 vk, vv = vit
                 if vk == edge_type or vv == edge_type: # is there an edge of type edge_type?
                     logic_res = True
-    return logic_res
+                    break
+    return logic_res, tnn
 
 def is_there_property_edge(scene_graph, propkey, maxhops=3):
 
@@ -78,10 +79,10 @@ def is_there_property_edge(scene_graph, propkey, maxhops=3):
 def is_small(graph, obj_node, volume_thresh=0.002):
     # volume threshold in cube meters, e.g., defaults to 2 litres
     # if object is small and on floor then trip hazard
-    if "obj_volume" not in graph[obj_node].keys():
+    if "obj_volume" not in graph.nodes[obj_node].keys():
         return False #larger surface
     else:
-        return graph[obj_node]["obj_volume"] <= volume_thresh
+        return graph.nodes[obj_node]["obj_volume"] <= volume_thresh
 
 def call_rule_check(G, node1prefix, node1, rule_body, nodemapping):
 
@@ -110,14 +111,14 @@ def call_rule_check(G, node1prefix, node1, rule_body, nodemapping):
         # is there the target qsr between elements from these two paths? e.g., does heater touch book
         pairs = list(product(n1list, n2list))
         for n1, n2 in pairs:
-            check_flag = is_there_an_edge(G, n1, n2, nodemapping, edge_type=rel)
+            check_flag, _ = is_there_an_edge(G, n1, n2, nodemapping, edge_type=rel)
             if check_flag: break  # stop when you find one
 
     else: # objects or areas
-        check_flag = is_there_an_edge(G, node1, n2key, nodemapping, edge_type=rel, except_node=n3)
+        check_flag, tgt_node = is_there_an_edge(G, node1, n2key, nodemapping, edge_type=rel, except_node=n3)
 
     if "is_small" in rule_body.keys():
-        check_flag = check_flag and is_small(G, node1)
+        check_flag = check_flag and is_small(G, tgt_node)
 
     if negated:
         check_flag = not check_flag
