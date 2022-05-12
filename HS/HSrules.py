@@ -39,6 +39,10 @@ def is_there_an_edge(scene_graph, node1, node2, nmap, edge_type=None, except_nod
     return logic_res
 
 def is_there_property_edge(scene_graph, propkey, maxhops=3):
+
+    #find node that has property propkey
+
+
     # Handle multi-hop edge check for commonsense properties in knowledge-completed graph, e.g., in the ignition, flammable case
     matching_nodes = []
     Gu = scene_graph.to_undirected() # make multidigraph unidrected otherwise path search not supported
