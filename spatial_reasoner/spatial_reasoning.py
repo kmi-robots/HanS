@@ -467,6 +467,16 @@ def extract_specialarea_QSR(session, obj_id, aoi_list, qsr_graph, dthresh=0.5):
             if is_in: #centroid of object within area of interest
                 qsr_graph.add_edge(obj_id, area_type, QSR='in')
 
+            # If robot is on fire escape route, add node to graph, if not added before
+            if not qsr_graph.has_node('fire_escape_area') and area_type == 'fire_escape_area':
+                tmp_cur.execute("""SELECT ST_Contains(ar.area, a.robot_position)
+                                           FROM anchors as a, sw_areas as ar
+                                           WHERE a.anchor_key = %s
+                                           and ar.areakey =%s
+                                           """, (obj_id, area_key))
+                robot_is_in = tmp_cur.fetchone()[0]
+                if robot_is_in: qsr_graph.add_node('fire_escape_area')
+
         else:
 
             # for fire call points:

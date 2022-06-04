@@ -42,7 +42,7 @@ def get_parser():
     #which meta-reasoning strategy?
     parser.add_argument('--meta', nargs='?',choices=['waterfall', 'parallel'],
                         default="waterfall", help='Metareasoning strategy: waterfall | parallel')
-    parser.add_argument('--dlconf', default=0.6, help='Confidence threshold for selecting which predictions to correct')
+    parser.add_argument('--dlconf', default=0.45, help='Confidence threshold for selecting which predictions to correct')
 
 
     #spatial reasoner

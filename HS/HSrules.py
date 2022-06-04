@@ -26,6 +26,9 @@ def is_there_an_edge(scene_graph, node1, node2, nmap, edge_type=None, except_nod
     if node2 in nmap.keys():
         tgt_neighbour_nodes.extend(nmap[node2]) # add anchor ids for node2 in case class not directly labelled on node
 
+    if len(tgt_neighbour_nodes)==0:
+        return logic_res, [] #no edge, individual node
+
     for tnn in tgt_neighbour_nodes:
         edge_data = scene_graph.get_edge_data(node1, tnn) # returns None if there is no edge
         if edge_data is None:

@@ -74,6 +74,12 @@ def main():
     # retrieve new object anchors to be examined and all DL predictions related to each anchor
     #i.e., either a newly added anchor or a former anchor for which a new measurement was recorded
     anchor_dict = retrieve_new_anchor_measurements(cursor)
+
+    #If no new anchors, no reasoning
+    if not bool(anchor_dict): #if dict is empty
+        print("No new observations or anchors found... stopping reasoning routine")
+        return
+
     populate_with_boxes(connection,cursor,sf=args_dict.sf) # compute size and spatial bboxes of union chull
     populate_with_sizes(connection,cursor) # estimate anchor sizes (based on bbox)
     print("Spatial DB completed with anchor bounding boxes and sizes")
@@ -86,9 +92,11 @@ def main():
     node_mapping={}
     for a_id, attr in anchor_dict.items():
         #Aggregate DL rankings on same anchor
+        print(attr['DL_predictions'])
         aggr_DL_rank = merge_scored_ranks(attr['DL_predictions'])
 
         # annotate qsr graph with top1 DL pred
+        print(aggr_DL_rank[0][0])
         topclass = target_classes[aggr_DL_rank[0][0]]
         qsr_graph.nodes[a_id]["obj_label"] = topclass
 
@@ -118,7 +126,7 @@ def main():
         else:
             print("DL confident enough, keeping original ranking")
             read_input = [(target_classes[cid], score) for cid, score in aggr_DL_rank]
-        print(read_input)
+        # print(read_input)
         final_pred = qsr_graph.nodes[a_id]["obj_label"]
         if not final_pred in node_mapping.keys():
             node_mapping[final_pred]=[]
