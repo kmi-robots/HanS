@@ -51,13 +51,17 @@ def is_there_property_edge(scene_graph, propkey, maxhops=3):
     matching_nodes = []
     Gu = scene_graph.to_undirected() # make multidigraph unidrected otherwise path search not supported
 
-    for nid in scene_graph.nodes():
+    #remove isolated nodes with no edges for which a shortest path cannot be computed
+    Gu.remove_nodes_from(list(nx.isolates(Gu)))
+
+    for nid in Gu.nodes():
         if nid not in matching_nodes:# skip visited nodes from next loop
             try:
                 path = nx.shortest_path(Gu, source=nid, target=propkey) #e.g., shortest path between book and flammable
             except Exception as e:
                 print(str(e))
                 break # one of the target properties not in graph
+                # if there is a fire escape area it also breaks because it is not connected to the rest of the graph
 
             if len(path)>0 and len(path)<=maxhops+1: #maximum number of hops allowed to consider a path valid
                 #if path is found
@@ -103,7 +107,7 @@ def call_rule_check(G, node1prefix, node1, rule_body, nodemapping):
 
     check_flag = False
 
-    if node1prefix== "property": #separate behaviour to check properties, walk on graph paths
+    if node1prefix == "property": #separate behaviour to check properties, walk on graph paths
 
         # is there a node with that property?
         n1list = is_there_property_edge(G, node1)
@@ -115,7 +119,8 @@ def call_rule_check(G, node1prefix, node1, rule_body, nodemapping):
         pairs = list(product(n1list, n2list))
         for n1, n2 in pairs:
             check_flag, _ = is_there_an_edge(G, n1, n2, nodemapping, edge_type=rel)
-            if check_flag: break  # stop when you find one
+            if check_flag:
+                break  # stop when you find one
 
     else: # objects or areas
         check_flag, tgt_node = is_there_an_edge(G, node1, n2key, nodemapping, edge_type=rel, except_node=n3)

@@ -92,7 +92,7 @@ def main():
     node_mapping={}
     for a_id, attr in anchor_dict.items():
         #Aggregate DL rankings on same anchor
-        print(attr['DL_predictions'])
+        #print(attr['DL_predictions'])
         aggr_DL_rank = merge_scored_ranks(attr['DL_predictions'])
 
         # annotate qsr graph with top1 DL pred
